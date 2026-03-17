@@ -1,0 +1,3056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VCF Upgrade Path Planner | vmtechie.blog</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #e2e6ec;
+    --border-strong: #c8d0db;
+    --text: #0f1923;
+    --text-2: #4a5568;
+    --text-3: #8a95a3;
+    --accent: #1a6ef5;
+    --accent-light: #e8f0fe;
+    --accent-dark: #1050c8;
+    --green: #0ea96a;
+    --green-light: #e6f9f2;
+    --amber: #f59e0b;
+    --amber-light: #fef3cd;
+    --red: #e53e3e;
+    --red-light: #fff0f0;
+    --purple: #7c3aed;
+    --purple-light: #f0ebff;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,0.10);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+  }
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 18px; height: 18px; color: white; }
+  .logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .logo-text span { color: var(--accent); }
+  .header-meta { font-size: 12px; color: var(--text-3); font-family: 'DM Mono', monospace; }
+
+  /* MAIN */
+  main { max-width: 1200px; margin: 0 auto; padding: 32px; }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #0f1923 0%, #1a2d45 100%);
+    border-radius: 16px;
+    padding: 40px 48px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(26,110,245,0.15) 0%, transparent 70%);
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(26,110,245,0.2);
+    border: 1px solid rgba(26,110,245,0.3);
+    color: #7eb5ff;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 20px; margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: 28px; font-weight: 700; color: white;
+    letter-spacing: -0.5px; margin-bottom: 10px; line-height: 1.3;
+  }
+  .hero p { color: #8aa4c0; font-size: 14px; max-width: 560px; line-height: 1.7; }
+  .hero-stats {
+    display: flex; gap: 32px; margin-top: 28px;
+  }
+  .hero-stat { }
+  .hero-stat-val { font-size: 22px; font-weight: 700; color: white; letter-spacing: -0.5px; }
+  .hero-stat-lbl { font-size: 11px; color: #6a8aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* PLANNER LAYOUT */
+  .planner-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
+  .card-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-header-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .card-header h2 { font-size: 14px; font-weight: 600; color: var(--text); }
+  .card-header p { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+  .card-body { padding: 22px; }
+
+  /* FORM */
+  .form-group { margin-bottom: 20px; }
+  .form-group:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px; }
+  select, input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a95a3' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    cursor: pointer;
+  }
+  select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,110,245,0.1); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent); color: white;
+    width: 100%; padding: 12px;
+  }
+  .btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,110,245,0.3); }
+  .btn-secondary {
+    background: var(--surface-2); color: var(--text-2);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-ghost { background: transparent; color: var(--accent); padding: 6px 12px; font-size: 13px; }
+  .btn-ghost:hover { background: var(--accent-light); }
+  .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* PATH TYPE SELECTOR */
+  .path-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .path-type-btn {
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    background: var(--surface);
+  }
+  .path-type-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+  .path-type-btn.active { border-color: var(--accent); background: var(--accent-light); }
+  .path-type-btn .pt-icon { font-size: 18px; margin-bottom: 4px; }
+  .path-type-btn .pt-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .path-type-btn .pt-desc { font-size: 11px; color: var(--text-3); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center; padding: 60px 32px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-state h3 { font-size: 16px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
+  .empty-state p { font-size: 13px; color: var(--text-3); }
+
+  /* RESULTS */
+  .results-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .results-title { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .results-subtitle { font-size: 13px; color: var(--text-3); margin-top: 2px; }
+  .results-actions { display: flex; gap: 8px; }
+
+  /* SUMMARY PILLS */
+  .summary-pills {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+  .pill-blue { background: var(--accent-light); color: var(--accent); }
+  .pill-green { background: var(--green-light); color: var(--green); }
+  .pill-amber { background: var(--amber-light); color: #b45309; }
+  .pill-red { background: var(--red-light); color: var(--red); }
+  .pill-purple { background: var(--purple-light); color: var(--purple); }
+  .pill svg { width: 12px; height: 12px; }
+
+  /* UPGRADE PATH VISUAL */
+  .upgrade-path {
+    position: relative;
+    margin-bottom: 24px;
+  }
+  .path-track {
+    display: flex; align-items: center; gap: 0;
+    overflow-x: auto; padding: 4px 0 8px;
+  }
+  .path-node {
+    display: flex; flex-direction: column; align-items: center;
+    flex-shrink: 0;
+  }
+  .path-node-circle {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12px;
+    border: 2px solid;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    z-index: 1;
+  }
+  .path-node-circle:hover { transform: scale(1.1); box-shadow: var(--shadow); }
+  .path-node-label { font-size: 11px; font-weight: 600; margin-top: 8px; text-align: center; color: var(--text-2); max-width: 70px; }
+  .path-node-version { font-size: 10px; color: var(--text-3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  .path-node.start .path-node-circle { background: var(--accent); border-color: var(--accent); color: white; }
+  .path-node.intermediate .path-node-circle { background: var(--amber-light); border-color: var(--amber); color: #92400e; }
+  .path-node.final .path-node-circle { background: var(--green-light); border-color: var(--green); color: #065f46; }
+  .path-node.current .path-node-circle { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-2); }
+
+  .path-arrow {
+    width: 40px; height: 2px; background: var(--border-strong);
+    flex-shrink: 0; position: relative; margin-top: -16px;
+  }
+  .path-arrow::after {
+    content: '';
+    position: absolute; right: -1px; top: -4px;
+    width: 0; height: 0;
+    border-left: 8px solid var(--border-strong);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+  }
+
+  /* STEPS */
+  .steps-list { display: flex; flex-direction: column; gap: 0; }
+
+  .step-item {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 0;
+    position: relative;
+  }
+  .step-item:not(:last-child) .step-line {
+    position: absolute;
+    left: 23px; top: 48px;
+    width: 2px;
+    height: calc(100% - 24px);
+    background: var(--border);
+  }
+
+  .step-left {
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 14px;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    flex-shrink: 0; z-index: 1;
+  }
+
+  .step-content {
+    padding: 14px 0 24px 16px;
+  }
+  .step-header {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .step-title { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.2px; }
+  .step-type-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 2px;
+  }
+  .step-desc { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 12px; }
+
+  /* PREREQ BOX */
+  .prereq-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .prereq-box h4 {
+    font-size: 11px; font-weight: 700; color: var(--text-2);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .prereq-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .prereq-list li {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 13px; color: var(--text-2); line-height: 1.5;
+  }
+  .prereq-list li::before {
+    content: '';
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0; margin-top: 7px;
+  }
+
+  /* WARNING BOX */
+  .warn-box {
+    display: flex; gap: 10px;
+    background: var(--amber-light);
+    border: 1px solid #fcd34d;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .warn-box svg { width: 16px; height: 16px; color: #d97706; flex-shrink: 0; margin-top: 1px; }
+  .warn-box p { font-size: 12px; color: #78350f; line-height: 1.5; }
+
+  /* KB LINKS */
+  .kb-links { display: flex; flex-wrap: wrap; gap: 6px; }
+  .kb-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    background: var(--accent-light);
+    border: 1px solid rgba(26,110,245,0.2);
+    border-radius: 4px;
+    color: var(--accent);
+    font-size: 11px; font-weight: 600;
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.15s;
+  }
+  .kb-link:hover { background: var(--accent); color: white; }
+  .kb-link svg { width: 10px; height: 10px; }
+
+  /* TIMELINE */
+  .timeline-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .timeline-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .timeline-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .timeline-total {
+    font-size: 13px; color: var(--text-3);
+    font-family: 'DM Mono', monospace;
+  }
+  .timeline-bar {
+    display: flex; height: 36px; border-radius: 6px; overflow: hidden; gap: 2px;
+  }
+  .timeline-seg {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: white;
+    min-width: 40px;
+    transition: opacity 0.15s;
+    cursor: default;
+    position: relative;
+  }
+  .timeline-seg:hover { opacity: 0.85; }
+  .timeline-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .tl-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-2); }
+  .tl-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* STEP TYPES */
+  .step-item.type-backup .step-num { background: var(--amber-light); color: #92400e; }
+  .step-item.type-backup .step-type-badge { background: var(--amber-light); color: #92400e; }
+  .step-item.type-upgrade .step-num { background: var(--accent-light); color: var(--accent); }
+  .step-item.type-upgrade .step-type-badge { background: var(--accent-light); color: var(--accent); }
+  .step-item.type-validate .step-num { background: var(--green-light); color: #065f46; }
+  .step-item.type-validate .step-type-badge { background: var(--green-light); color: #065f46; }
+  .step-item.type-convert .step-num { background: var(--purple-light); color: var(--purple); }
+  .step-item.type-convert .step-type-badge { background: var(--purple-light); color: var(--purple); }
+  .step-item.type-pre .step-num { background: #fce7f3; color: #9d174d; }
+  .step-item.type-pre .step-type-badge { background: #fce7f3; color: #9d174d; }
+  .step-item.type-aria .step-num { background: #ede9fe; color: #5b21b6; }
+  .step-item.type-aria .step-type-badge { background: #ede9fe; color: #5b21b6; }
+  .step-item.type-finalize .step-num { background: #d1fae5; color: #065f46; }
+  .step-item.type-finalize .step-type-badge { background: #d1fae5; color: #065f46; }
+  .step-item.type-depot .step-num { background: #fef3c7; color: #92400e; }
+  .step-item.type-depot .step-type-badge { background: #fef3c7; color: #92400e; }
+  .step-item.type-workload .step-num { background: #e0e7ff; color: #3730a3; }
+  .step-item.type-workload .step-type-badge { background: #e0e7ff; color: #3730a3; }
+  .step-item.type-workload .step-num { background: #e0e7ff; color: #3730a3; }
+  .step-item.type-workload .step-type-badge { background: #e0e7ff; color: #3730a3; }
+
+  /* NOTICE */
+  .notice {
+    display: flex; gap: 12px;
+    background: var(--accent-light);
+    border: 1px solid rgba(26,110,245,0.2);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .notice svg { width: 18px; height: 18px; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+  .notice p { font-size: 13px; color: #1e40af; line-height: 1.5; }
+
+  /* COMPLEXITY METER */
+  .complexity-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .complexity-label { font-size: 12px; color: var(--text-2); font-weight: 600; flex-shrink: 0; width: 80px; }
+  .complexity-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+  .complexity-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+  .complexity-val { font-size: 12px; font-weight: 700; flex-shrink: 0; width: 60px; text-align: right; font-family: 'DM Mono', monospace; }
+
+  /* SECTION */
+  .section-label {
+    font-size: 11px; font-weight: 700; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* DISCLAIMER */
+  .disclaimer {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-top: 24px;
+  }
+  .disclaimer p { font-size: 11px; color: var(--text-3); line-height: 1.6; }
+  .disclaimer strong { color: var(--text-2); }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 24px;
+    font-size: 12px; color: var(--text-3);
+    border-top: 1px solid var(--border);
+    margin-top: 32px;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* PRINT */
+  @media print {
+    header { display: none; }
+    .planner-grid { grid-template-columns: 1fr; }
+    .config-panel { display: none; }
+    .btn { display: none; }
+    body { background: white; }
+    .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .planner-grid { grid-template-columns: 1fr; }
+    main { padding: 16px; }
+    .hero { padding: 28px 24px; }
+    .hero-stats { gap: 20px; }
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-in { animation: fadeIn 0.3s ease forwards; }
+
+  .step-item { animation: fadeIn 0.3s ease forwards; }
+
+  /* HIGHLIGHT */
+  .highlight-step {
+    background: var(--accent-light);
+    border: 1px solid rgba(26,110,245,0.15);
+    border-radius: var(--radius-sm);
+    padding: 2px 4px; margin: -2px -4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="https://vmtechie.blog" class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+          <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+        </svg>
+      </div>
+      <span class="logo-text">vm<span>techie</span>.blog</span>
+    </a>
+    <span class="header-meta">VCF Upgrade Path Planner v1.1</span>
+    <a href="#vcf-architecture" style="font-size:12px;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:4px;font-weight:500">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Architecture
+    </a>
+    <a href="#vcf-release-types" style="font-size:12px;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:4px;font-weight:500">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Release Types
+    </a>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="hero-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Planning Tool
+    </div>
+    <h1>VMware Cloud Foundation<br>Upgrade Path Planner</h1>
+    <p>Generate a complete, step-by-step upgrade roadmap from your current vSphere or VCF version to VCF 9.x — with prerequisites, KB references, and timeline estimates.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">6</div>
+        <div class="hero-stat-lbl">Source Versions</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">8+</div>
+        <div class="hero-stat-lbl">Upgrade Paths</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">50+</div>
+        <div class="hero-stat-lbl">KB References</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="planner-grid">
+    <!-- CONFIG PANEL -->
+    <div class="config-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon" style="background:#e8f0fe">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1a6ef5" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
+          </div>
+          <div>
+            <h2>Configure Your Path</h2>
+            <p>Set source, target & environment</p>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <div class="form-group">
+            <label>Current Environment Type</label>
+            <div class="path-type-grid">
+              <div class="path-type-btn active" data-type="vsphere" onclick="setEnvType('vsphere',this)">
+                <div class="pt-icon">🖥</div>
+                <div class="pt-label">vSphere</div>
+                <div class="pt-desc">Standalone</div>
+              </div>
+              <div class="path-type-btn" data-type="vcf" onclick="setEnvType('vcf',this)">
+                <div class="pt-icon">☁️</div>
+                <div class="pt-label">VCF</div>
+                <div class="pt-desc">Already on VCF</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" id="vsphere-version-group">
+            <label>Current vSphere Version</label>
+            <select id="src-vsphere" onchange="updatePath()">
+              <option value="">— Select Version —</option>
+              <option value="vs70">vSphere 7.0 / 7.0 U1</option>
+              <option value="vs70u2">vSphere 7.0 U2 / U3</option>
+              <option value="vs80">vSphere 8.0 / 8.0 U1</option>
+              <option value="vs80u2">vSphere 8.0 U2 / U3</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="vcf-version-group" style="display:none">
+            <label>Current VCF Version</label>
+            <select id="src-vcf" onchange="updatePath()">
+              <option value="">— Select Version —</option>
+              <option value="vcf50">VCF 5.0</option>
+              <option value="vcf51">VCF 5.1 / 5.2</option>
+              <option value="vcf90">VCF 9.0.0 / 9.0.1</option>
+              <option value="vcf902">VCF 9.0.2 (current)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Target VCF Sub-Version</label>
+            <select id="target-subversion" onchange="updatePath()">
+              <option value="vcf902">VCF 9.0.2 (Latest — Jan 2026)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Target VCF Version</label>
+            <select id="target-version" onchange="updatePath()">
+              <option value="vcf90">VCF 9.0 (Latest)</option>
+            </select>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="form-group">
+            <label>Storage Backend</label>
+            <select id="storage-type" onchange="updatePath()">
+              <option value="vsan">vSAN (ESA)</option>
+              <option value="vsan-osa">vSAN (OSA/Hybrid)</option>
+              <option value="nfs">NFS / External</option>
+              <option value="fc">Fibre Channel</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Domain Type</label>
+            <select id="domain-type" onchange="updatePath()">
+              <option value="mgmt">Management Domain Only</option>
+              <option value="mgmt-wld">Management + Workload Domains</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="nsx-group">
+            <label>NSX Version (if applicable)</label>
+            <select id="nsx-version" onchange="updatePath()">
+              <option value="none">Not Deployed / N/A</option>
+              <option value="nsx3">NSX-T 3.x</option>
+              <option value="nsx4">NSX 4.x</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="nsx-vcf-info" style="display:none">
+            <label>NSX in VCF</label>
+            <div style="background:var(--green-light);border:1px solid #6ee7b7;border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:#065f46;line-height:1.5">
+              ✅ <strong>NSX is included in the VCF BOM.</strong> It is a mandatory component of all VCF deployments and will be upgraded as part of the LCM upgrade sequence.
+            </div>
+          </div>
+
+          <div class="form-group" id="aria-group" style="display:none">
+            <label>Aria / VCF Operations Status</label>
+            <select id="aria-status" onchange="updatePath()">
+              <option value="none">Not installed</option>
+              <option value="aria-old">Aria Operations &lt; 8.18 (needs multi-hop)</option>
+              <option value="aria-818">Aria Operations 8.18 (ready to upgrade)</option>
+              <option value="aria-vcf9">VCF Operations 9.0 (already current)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="aria-automation-group" style="display:none">
+            <label>Aria Automation / VCF Automation Status</label>
+            <select id="aria-automation-status" onchange="updatePath()">
+              <option value="not-deployed">Not deployed (skip Automation steps)</option>
+              <option value="deployed">Aria Automation deployed (upgrade to VCF Automation 9.0)</option>
+              <option value="vcf-auto-9">VCF Automation 9.0 (already current)</option>
+            </select>
+          </div>
+
+          <button class="btn btn-primary" onclick="generatePath()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Generate Upgrade Path
+          </button>
+        </div>
+      </div>
+
+      <!-- COMPLEXITY -->
+      <div class="card" id="complexity-card" style="margin-top:16px;display:none">
+        <div class="card-header">
+          <div class="card-header-icon" style="background:#fef3cd">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" style="width:14px;height:14px"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div>
+            <h2>Complexity Assessment</h2>
+            <p>Estimated effort & risk</p>
+          </div>
+        </div>
+        <div class="card-body" id="complexity-body"></div>
+      </div>
+    </div>
+
+    <!-- RESULTS PANEL -->
+    <div id="results-panel">
+      <div class="empty-state">
+        <div class="empty-icon">🗺️</div>
+        <h3>Configure your upgrade path</h3>
+        <p>Select your current environment, version, and storage type on the left, then click "Generate Upgrade Path" to see your complete upgrade roadmap.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- VCF ARCHITECTURE SECTION -->
+<section id="vcf-architecture" style="background:var(--bg);padding:0 0 48px">
+<div style="max-width:1200px;margin:0 auto;padding:0 32px">
+
+  <!-- Section Header -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+    <div style="width:3px;height:28px;background:var(--accent);border-radius:2px"></div>
+    <div>
+      <h2 style="font-size:20px;font-weight:700;letter-spacing:-0.4px;color:var(--text)">Private Cloud Constructs within Cloud Foundation</h2>
+      <p style="font-size:13px;color:var(--text-3);margin-top:2px">Hierarchical architecture — Private Cloud → Fleet → Instance → Domains</p>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div style="display:flex;gap:16px;margin-bottom:24px;margin-left:15px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)">
+      <div style="width:12px;height:12px;background:#1a6ef5;border-radius:3px"></div>Core Components
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)">
+      <div style="width:12px;height:12px;background:#7c3aed;border-radius:3px"></div>Operations Layer
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)">
+      <div style="width:12px;height:12px;background:rgba(14,169,106,0.15);border:1.5px solid #0ea96a;border-radius:3px"></div>Management Domain
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)">
+      <div style="width:12px;height:12px;background:rgba(26,110,245,0.08);border:1.5px dashed #1a6ef5;border-radius:3px"></div>Workload Domain
+    </div>
+  </div>
+
+  <!-- Architecture Diagram -->
+  <div class="arch-diagram" id="arch-diagram">
+
+    <!-- Private Cloud Wrapper -->
+    <div class="arch-private-cloud">
+      <div class="arch-private-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:13px;height:13px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+        Private Cloud
+      </div>
+
+      <!-- Three Fleets -->
+      <div class="arch-fleets-row">
+
+        <!-- Fleet 1 (highlighted) -->
+        <div class="arch-fleet arch-fleet--active">
+          <div class="arch-fleet-header">
+            <div class="arch-fleet-badge">VCF Fleet</div>
+          </div>
+
+          <!-- Ops layer — Fleet-level Management Components -->
+          <div class="arch-fleet-mgmt-label">Fleet Management Components</div>
+          <div class="arch-ops-bar arch-ops-bar--automation" title="VCF Automation — Fleet Level">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;opacity:.85"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            VCF Automation
+          </div>
+          <div class="arch-ops-bar arch-ops-bar--operations" title="VCF Operations — Fleet Level">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;opacity:.85"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            VCF Operations
+          </div>
+          <div class="arch-ops-chips">
+            <span class="arch-ops-chip" title="Fleet-level: manages VCF instances and upgrades">Fleet Management</span>
+            <span class="arch-ops-chip" title="Fleet-level: centralized log aggregation">Ops for Logs</span>
+            <span class="arch-ops-chip" title="Fleet-level: network visibility (vRNI)">Ops for Networks</span>
+            <span class="arch-ops-chip" title="Fleet-level: identity federation">Identity Broker</span>
+          </div>
+
+          <!-- VCF Instance -->
+          <div class="arch-instance arch-instance--active">
+            <div class="arch-instance-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:11px;height:11px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+              VCF Instance
+            </div>
+
+            <!-- Management Domain -->
+            <div class="arch-domain arch-domain--mgmt">
+              <div class="arch-domain-title">Management Domain <span class="arch-scope-tag">Core Components</span></div>
+              <div class="arch-component arch-component--vcenter">vCenter</div>
+              <div class="arch-component arch-component--nsx">NSX Manager</div>
+              <div class="arch-component arch-component--sddc">SDDC Manager</div>
+              <div class="arch-component arch-component--esx">ESX Hosts</div>
+              <div class="arch-clusters">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:9px;height:9px;opacity:.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                Clusters
+              </div>
+              <div class="arch-infra-row">
+                <div class="arch-infra-icon" title="Compute">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </div>
+                <div class="arch-infra-icon" title="Storage">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                </div>
+                <div class="arch-infra-icon" title="Network">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Workload Domain -->
+            <div class="arch-domain arch-domain--workload">
+              <div class="arch-domain-title" style="color:var(--text-3)">Additional Workload Domains</div>
+              <div class="arch-component arch-component--vcenter">vCenter</div>
+              <div class="arch-component arch-component--nsx">NSX</div>
+              <div class="arch-clusters">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:9px;height:9px;opacity:.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                Clusters
+              </div>
+              <div class="arch-infra-row">
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+              </div>
+            </div>
+
+            <div class="arch-more-instances">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px;opacity:.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+              Additional VCF Instances
+            </div>
+          </div>
+        </div>
+
+        <!-- Fleet 2 -->
+        <div class="arch-fleet">
+          <div class="arch-fleet-header">
+            <div class="arch-fleet-badge">VCF Fleet</div>
+          </div>
+          <div class="arch-ops-bar arch-ops-bar--automation" style="opacity:.55">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            VCF Automation
+          </div>
+          <div class="arch-ops-bar arch-ops-bar--operations" style="opacity:.55">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            VCF Operations
+          </div>
+          <div class="arch-instance">
+            <div class="arch-instance-label" style="opacity:.7">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:11px;height:11px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+              VCF Instance
+            </div>
+            <div class="arch-domain arch-domain--mgmt" style="opacity:.7">
+              <div class="arch-domain-title">Management Domain</div>
+              <div class="arch-component arch-component--vcenter">vCenter</div>
+              <div class="arch-component arch-component--nsx">NSX</div>
+              <div class="arch-component arch-component--sddc">SDDC Manager</div>
+              <div class="arch-clusters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:9px;height:9px;opacity:.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Clusters</div>
+              <div class="arch-infra-row">
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+              </div>
+            </div>
+            <div class="arch-domain arch-domain--workload" style="opacity:.7">
+              <div class="arch-domain-title" style="color:var(--text-3)">Additional Workload Domains</div>
+              <div class="arch-component arch-component--vcenter">vCenter</div>
+              <div class="arch-component arch-component--nsx">NSX</div>
+              <div class="arch-clusters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:9px;height:9px;opacity:.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Clusters</div>
+              <div class="arch-infra-row">
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+              </div>
+            </div>
+            <div class="arch-more-instances" style="opacity:.6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px;opacity:.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>Additional VCF Instances</div>
+          </div>
+        </div>
+
+        <!-- Fleet 3 -->
+        <div class="arch-fleet">
+          <div class="arch-fleet-header">
+            <div class="arch-fleet-badge">VCF Fleet</div>
+          </div>
+          <div class="arch-ops-bar arch-ops-bar--automation" style="opacity:.45">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            VCF Automation
+          </div>
+          <div class="arch-ops-bar arch-ops-bar--operations" style="opacity:.45">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            VCF Operations
+          </div>
+          <div class="arch-instance">
+            <div class="arch-instance-label" style="opacity:.55">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:11px;height:11px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+              VCF Instance
+            </div>
+            <div class="arch-domain arch-domain--mgmt" style="opacity:.55">
+              <div class="arch-domain-title">Management Domain</div>
+              <div class="arch-component arch-component--vcenter">vCenter</div>
+              <div class="arch-component arch-component--nsx">NSX</div>
+              <div class="arch-component arch-component--sddc">SDDC Manager</div>
+              <div class="arch-clusters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:9px;height:9px;opacity:.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Clusters</div>
+              <div class="arch-infra-row">
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+              </div>
+            </div>
+            <div class="arch-domain arch-domain--workload" style="opacity:.55">
+              <div class="arch-domain-title" style="color:var(--text-3)">Additional Workload Domains</div>
+              <div class="arch-component arch-component--vcenter">vCenter</div>
+              <div class="arch-component arch-component--nsx">NSX</div>
+              <div class="arch-clusters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:9px;height:9px;opacity:.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Clusters</div>
+              <div class="arch-infra-row">
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+                <div class="arch-infra-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+              </div>
+            </div>
+            <div class="arch-more-instances" style="opacity:.5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px;opacity:.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>Additional VCF Instances</div>
+          </div>
+        </div>
+
+        <!-- Sidebar Legend + Component Classification -->
+        <div class="arch-sidebar-legend">
+          <div class="arch-legend-block">
+            <div class="arch-legend-title">
+              <div class="arch-legend-dot" style="background:var(--accent)"></div>
+              VCF Instance
+            </div>
+            <ul class="arch-legend-list">
+              <li>Management Domain</li>
+              <li>Workload Domains</li>
+            </ul>
+          </div>
+          <div class="arch-legend-block">
+            <div class="arch-legend-title">
+              <div class="arch-legend-dot" style="background:var(--purple)"></div>
+              VCF Fleet
+            </div>
+            <ul class="arch-legend-list">
+              <li>One or more VCF Instances</li>
+              <li>Common VCF Operations instance</li>
+              <li>Common VCF Automation instance</li>
+            </ul>
+          </div>
+          <div class="arch-legend-block">
+            <div class="arch-legend-title">
+              <div class="arch-legend-dot" style="background:var(--green)"></div>
+              Private Cloud
+            </div>
+            <ul class="arch-legend-list">
+              <li>One or more VCF Fleets</li>
+            </ul>
+          </div>
+          <!-- Component Classification -->
+          <div class="arch-comp-classify">
+            <div class="arch-comp-classify-title">Component Scope</div>
+            <div class="arch-comp-row">
+              <div class="arch-comp-scope arch-comp-scope--fleet">Fleet</div>
+              <div class="arch-comp-items">
+                <span>VCF Operations</span>
+                <span>VCF Automation</span>
+                <span>Ops Fleet Mgmt</span>
+                <span>Ops for Logs</span>
+                <span>Ops for Networks</span>
+                <span>Identity Broker</span>
+              </div>
+            </div>
+            <div class="arch-comp-row" style="margin-top:6px">
+              <div class="arch-comp-scope arch-comp-scope--instance">Instance</div>
+              <div class="arch-comp-items">
+                <span>SDDC Manager</span>
+                <span>vCenter</span>
+                <span>NSX Manager</span>
+                <span>ESX Hosts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /arch-fleets-row -->
+    </div><!-- /arch-private-cloud -->
+
+  </div><!-- /arch-diagram -->
+</div>
+</section>
+
+<style>
+/* ── Architecture Diagram Styles ── */
+.arch-diagram {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.arch-private-cloud {
+  background: linear-gradient(135deg, #f0f6ff 0%, #f7f0ff 100%);
+  border: 1.5px solid #d0dcf5;
+  border-radius: 14px;
+  padding: 16px 16px 20px;
+  min-width: 820px;
+  position: relative;
+}
+.arch-private-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.arch-fleets-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 200px;
+  gap: 12px;
+  align-items: start;
+}
+/* Fleet card */
+.arch-fleet {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  transition: box-shadow 0.2s;
+}
+.arch-fleet--active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(26,110,245,0.08);
+}
+.arch-fleet-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.arch-fleet-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-2);
+  letter-spacing: 0.3px;
+  background: var(--surface-2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+/* Ops bars */
+.arch-ops-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 5px;
+  margin-bottom: 4px;
+  letter-spacing: 0.1px;
+}
+.arch-ops-bar--automation {
+  background: #1a6ef5;
+  color: white;
+}
+.arch-ops-bar--operations {
+  background: #7c3aed;
+  color: white;
+  margin-bottom: 8px;
+}
+/* Instance */
+.arch-instance {
+  background: rgba(248,250,255,0.8);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+}
+.arch-instance--active {
+  border-color: rgba(26,110,245,0.3);
+}
+.arch-instance-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+/* Domains */
+.arch-domain {
+  border-radius: 6px;
+  padding: 7px 8px;
+  margin-bottom: 6px;
+}
+.arch-domain--mgmt {
+  background: rgba(14,169,106,0.06);
+  border: 1.5px solid rgba(14,169,106,0.3);
+}
+.arch-domain--workload {
+  background: rgba(26,110,245,0.04);
+  border: 1.5px dashed rgba(26,110,245,0.3);
+}
+.arch-domain-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 5px;
+}
+/* Components */
+.arch-component {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  text-align: center;
+}
+.arch-component--vcenter {
+  background: #1a6ef5;
+  color: white;
+}
+.arch-component--nsx {
+  background: #7c3aed;
+  color: white;
+}
+.arch-component--sddc {
+  background: #0ea96a;
+  color: white;
+}
+/* Clusters pill */
+.arch-clusters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-3);
+  font-style: italic;
+  margin: 5px 0 4px;
+  padding: 3px 6px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+/* Infra icons */
+.arch-infra-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.arch-infra-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+}
+.arch-infra-icon svg {
+  width: 13px;
+  height: 13px;
+}
+/* More instances footer */
+.arch-more-instances {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-3);
+  text-align: center;
+  justify-content: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+/* Sidebar legend */
+.arch-sidebar-legend {
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: center;
+}
+.arch-legend-block {}
+.arch-legend-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.arch-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.arch-legend-list {
+  list-style: none;
+  padding-left: 15px;
+}
+.arch-legend-list li {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.8;
+  padding-left: 10px;
+  position: relative;
+}
+.arch-legend-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-size: 10px;
+}
+
+/* Fleet label above ops bars */
+.arch-fleet-mgmt-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-3);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+/* Ops chips (sub-components) */
+.arch-ops-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+.arch-ops-chip {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #5b21b6;
+  background: #ede9fe;
+  border: 1px solid #c4b5fd;
+  border-radius: 3px;
+  padding: 2px 6px;
+  cursor: default;
+  transition: background 0.15s;
+}
+.arch-ops-chip:hover {
+  background: #ddd6fe;
+}
+
+/* Core component scope tag */
+.arch-scope-tag {
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #065f46;
+  background: rgba(14,169,106,0.12);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* ESX component color */
+.arch-component--esx {
+  background: #0f766e;
+  color: white;
+}
+
+/* Component classification block */
+.arch-comp-classify {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 10px;
+  margin-top: 4px;
+}
+.arch-comp-classify-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+.arch-comp-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.arch-comp-scope {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.arch-comp-scope--fleet {
+  background: #ede9fe;
+  color: #5b21b6;
+  border: 1px solid #c4b5fd;
+}
+.arch-comp-scope--instance {
+  background: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid #93c5fd;
+}
+.arch-comp-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.arch-comp-items span {
+  font-size: 10px;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+</style>
+
+
+<!-- VCF RELEASE TYPES SECTION -->
+<section id="vcf-release-types" style="background:var(--surface-2);border-top:1px solid var(--border);padding:48px 0">
+<div style="max-width:1200px;margin:0 auto;padding:0 32px">
+
+  <!-- Section Header -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+    <div style="width:3px;height:28px;background:var(--purple);border-radius:2px"></div>
+    <div>
+      <h2 style="font-size:20px;font-weight:700;letter-spacing:-0.4px;color:var(--text)">VCF Release Policy &amp; Lifecycle Management</h2>
+      <p style="font-size:13px;color:var(--text-3);margin-top:2px">Four distinct release types — each with different scope, upgrade rules, and consumption patterns</p>
+    </div>
+    <a href="https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/lifecycle-management/lifecycle-management-in-vmware-cloud-foundation.html" target="_blank" rel="noopener" style="margin-left:auto;font-size:11px;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:4px;white-space:nowrap;font-weight:500">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Official Docs
+    </a>
+  </div>
+
+  <!-- Consumption Pattern Info -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;margin-left:15px">
+    <div class="rt-pattern-card rt-pattern-card--unified">
+      <div class="rt-pattern-icon">🔄</div>
+      <div>
+        <div class="rt-pattern-title">Unified Consumption</div>
+        <div class="rt-pattern-desc">All VCF components updated in lockstep as part of a single release. Applies to <strong>Major</strong> and <strong>Minor</strong> releases.</div>
+      </div>
+    </div>
+    <div class="rt-pattern-card rt-pattern-card--selective">
+      <div class="rt-pattern-icon">☑️</div>
+      <div>
+        <div class="rt-pattern-title">Selective Consumption</div>
+        <div class="rt-pattern-desc">Pick and choose which components to apply based on operational impact. Applies to <strong>Maintenance</strong> and <strong>Patch</strong> releases.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Release Types Cards -->
+  <div class="rt-grid">
+
+    <!-- Major -->
+    <div class="rt-card rt-card--major">
+      <div class="rt-card-header">
+        <div class="rt-version-example">e.g. 9.0.0.0 → 10.0.0.0</div>
+        <div class="rt-badge rt-badge--major">Major</div>
+      </div>
+      <div class="rt-card-body">
+        <p class="rt-desc">The most significant platform evolution. Primary vehicle for major features and breaking changes. Governed by a strict deprecation policy — a feature must be announced for deprecation in a prior major release before it can be removed.</p>
+        <div class="rt-attrs">
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            Full-stack synchronized
+          </div>
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            Can introduce breaking changes
+          </div>
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            Unified consumption — all components
+          </div>
+          <div class="rt-attr rt-attr--no">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Cannot skip components
+          </div>
+        </div>
+        <div class="rt-upgrade-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;color:var(--accent);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>This upgrade planner handles Major release upgrades (VCF 4.x / 5.x → 9.0)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Minor -->
+    <div class="rt-card rt-card--minor">
+      <div class="rt-card-header">
+        <div class="rt-version-example">e.g. 9.0 → 9.1, 9.1 → 9.2</div>
+        <div class="rt-badge rt-badge--minor">Minor</div>
+      </div>
+      <div class="rt-card-body">
+        <p class="rt-desc">Primary mechanism for delivering new features and enhancements within a major version. Functionally additive and designed to be non-disruptive from a compatibility and API perspective.</p>
+        <div class="rt-attrs">
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            Full-stack synchronized
+          </div>
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            Unified consumption — all components
+          </div>
+          <div class="rt-attr rt-attr--no">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            No breaking changes / removals
+          </div>
+          <div class="rt-attr rt-attr--no">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Cannot skip components
+          </div>
+        </div>
+        <div class="rt-upgrade-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;color:var(--accent);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Same upgrade sequence as Major: fleet management components first, then instance core components</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Maintenance -->
+    <div class="rt-card rt-card--maintenance">
+      <div class="rt-card-header">
+        <div class="rt-version-example">e.g. 9.1.0 → 9.1.1, 9.1.2</div>
+        <div class="rt-badge rt-badge--maintenance">Maintenance</div>
+      </div>
+      <div class="rt-card-body">
+        <p class="rt-desc">Scheduled, cumulative update for stability and support. Provides bug fixes, security patches, hardware enablement, driver updates, guest OS support, and backward-compatible features. Synchronized among VCF components with a new Bill of Materials (BOM).</p>
+        <div class="rt-attrs">
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            New Bill of Materials (BOM)
+          </div>
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            Pick-and-choose per component
+          </div>
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            Hardware enablement &amp; driver updates
+          </div>
+          <div class="rt-attr rt-attr--no">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            No new major features
+          </div>
+        </div>
+        <div class="rt-upgrade-order">
+          <div class="rt-upgrade-order-title">Maintenance Upgrade Order</div>
+          <div class="rt-upgrade-order-steps">
+            <div class="rt-order-step rt-order-step--fleet">
+              <div class="rt-order-num">1</div>
+              <div>VCF Operations Fleet Management appliance</div>
+            </div>
+            <div class="rt-order-arrow">↓</div>
+            <div class="rt-order-step rt-order-step--fleet">
+              <div class="rt-order-num">2</div>
+              <div>VCF Operations instance</div>
+            </div>
+            <div class="rt-order-arrow">↓</div>
+            <div class="rt-order-step rt-order-step--fleet">
+              <div class="rt-order-num">3</div>
+              <div>Remaining fleet management components (in preferred order)</div>
+            </div>
+            <div class="rt-order-arrow">↓</div>
+            <div class="rt-order-step rt-order-step--instance">
+              <div class="rt-order-num">4</div>
+              <div>SDDC Manager → NSX → vCenter → ESX → vSAN</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patch -->
+    <div class="rt-card rt-card--patch">
+      <div class="rt-card-header">
+        <div class="rt-version-example">e.g. 9.1.1.0 → 9.1.1.0100</div>
+        <div class="rt-badge rt-badge--patch">Patch</div>
+      </div>
+      <div class="rt-card-body">
+        <p class="rt-desc">Time-sensitive fixes for security vulnerabilities and catastrophic issues impacting business operations, released between scheduled releases. Not synchronized among all components — no BOM update required.</p>
+        <div class="rt-attrs">
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            Pick-and-choose per component
+          </div>
+          <div class="rt-attr rt-attr--yes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="20 6 9 17 4 12"/></svg>
+            Emergency / security focused
+          </div>
+          <div class="rt-attr rt-attr--no">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            No new BOM synchronization
+          </div>
+          <div class="rt-attr rt-attr--no">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Not synchronized across all components
+          </div>
+        </div>
+        <div class="rt-upgrade-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;color:var(--amber);flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Apply only to affected components. Monitor Broadcom Security Advisories (VMSA) for critical patches.</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /rt-grid -->
+
+
+  <!-- LCM Tools & Key Notes -->
+  <div class="rt-tools-section">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;margin-top:40px">
+      <div style="width:3px;height:24px;background:var(--green);border-radius:2px"></div>
+      <h3 style="font-size:17px;font-weight:700;letter-spacing:-0.3px;color:var(--text)">LCM Tools &amp; Key Operational Notes</h3>
+    </div>
+    <div class="rt-tools-grid">
+
+      <div class="rt-tool-card">
+        <div class="rt-tool-icon" style="background:#fef3c7;color:#92400e">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <div>
+          <div class="rt-tool-title">VCF Download Tool</div>
+          <div class="rt-tool-desc">For dark-site / air-gapped environments with no internet access on SDDC Manager. Run the Download Tool on an internet-connected machine, download upgrade bundles, then upload them manually to SDDC Manager. Supports both core component binaries and management component binaries.</div>
+        </div>
+      
+      <div class="rt-tool-card" style="border:1px solid rgba(16,185,129,0.3);background:linear-gradient(135deg,rgba(16,185,129,0.05),var(--surface))">
+        <div class="rt-tool-icon" style="background:#d1fae5;color:#065f46">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+          <div class="rt-tool-title">VCF 9.0.2 — Latest Release <span style="font-size:10px;background:#d1fae5;color:#065f46;padding:1px 6px;border-radius:3px;font-weight:700;margin-left:4px">20 JAN 2026</span></div>
+          <div class="rt-tool-desc">Maintenance release. Key fix: <strong>NSX Edge OVF signing certificates expired Jan 3 2026</strong> — any new Edge deployment/resize on 9.0.0 or 9.0.1 fails. Resolved in NSX 9.0.2 (KB 424034, KB 424036). Also fixes NSX DNS forwarder failures, VPN core dumps, BGP alarm issues, and 40+ other resolved issues. Upgrade Fleet Management first, then SDDC Manager, then core components.</div>
+        </div>
+      </div>
+</div>
+
+      <div class="rt-tool-card">
+        <div class="rt-tool-icon" style="background:#e0e7ff;color:#3730a3">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        </div>
+        <div>
+          <div class="rt-tool-title">Two Separate Depots</div>
+          <div class="rt-tool-desc"><strong>Fleet depot</strong> (on VCF Operations fleet management appliance): manages management component binaries — VCF Operations, Automation, Ops for Logs, Ops for Networks, Identity Broker. <strong>Core depot</strong> (on SDDC Manager): manages core component binaries — vCenter, NSX Manager, ESX, SDDC Manager. Both must be configured independently.</div>
+        </div>
+      </div>
+
+      <div class="rt-tool-card">
+        <div class="rt-tool-icon" style="background:#d1fae5;color:#065f46">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <div class="rt-tool-title">Flexible BOM Upgrade Planner</div>
+          <div class="rt-tool-desc">Built into VCF Operations — lets you select specific target versions for each core component individually rather than upgrading everything in lockstep. Available for Maintenance releases. Access via: VCF Operations → Lifecycle Management → Upgrade or Update the Core Components in your VCF Domain.</div>
+        </div>
+      </div>
+
+      <div class="rt-tool-card">
+        <div class="rt-tool-icon" style="background:#f0ebff;color:#7c3aed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <div>
+          <div class="rt-tool-title">SDDC Manager Independent Patching</div>
+          <div class="rt-tool-desc">SDDC Manager can be patched independently without upgrading the entire VCF Instance. A patch release changes the 4th digit of the version number (e.g. SDDC Manager 9.0.0.0100). Use VCF Operations to apply SDDC Manager patches independently without touching vCenter, NSX, or ESX hosts.</div>
+        </div>
+      </div>
+
+      <div class="rt-tool-card rt-tool-card--warn">
+        <div class="rt-tool-icon" style="background:#fff0f0;color:#e53e3e">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <div class="rt-tool-title">SDDC Manager UI — Deprecated</div>
+          <div class="rt-tool-desc">The SDDC Manager UI is being deprecated and will be removed in a future VCF release. You can still use it to upgrade workload domains in VCF 9.0 (alongside VCF Operations), but Broadcom recommends migrating all lifecycle management workflows to VCF Operations going forward.</div>
+        </div>
+      </div>
+
+      <div class="rt-tool-card">
+        <div class="rt-tool-icon" style="background:var(--accent-light);color:var(--accent)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div>
+          <div class="rt-tool-title">Workload Domain Upgrade Sequence</div>
+          <div class="rt-tool-desc">Workload domains must be at VCF 5.0+ before upgrading to 9.0. Upgrade sequence mirrors management domain: Core upgrade order: NSX → vCenter → ESXi. The following are common post-upgrade tasks that apply where relevant to your environment: vLCM cluster image transition (where Baselines were in use), vSphere Supervisor upgrade (if Tanzu is deployed), VDS version update, vSAN on-disk format upgrade, NFS static route (if using NFS storage). Not all tasks apply to every workload domain — verify applicability before execution.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<style>
+.rt-tools-section {}
+.rt-tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 900px) { .rt-tools-grid { grid-template-columns: 1fr; } }
+.rt-tool-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.rt-tool-card--warn {
+  border-color: #fca5a5;
+  background: #fff8f8;
+}
+.rt-tool-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rt-tool-icon svg { width: 16px; height: 16px; }
+.rt-tool-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.rt-tool-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+</style>
+
+</div>
+</section>
+
+<style>
+/* ── Release Types Styles ── */
+.rt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) { .rt-grid { grid-template-columns: 1fr; } }
+
+.rt-card {
+  background: var(--surface);
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.rt-card:hover { box-shadow: var(--shadow); }
+
+.rt-card-header {
+  padding: 12px 16px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.rt-card--major .rt-card-header { background: linear-gradient(135deg, #0f1923 0%, #1a2d45 100%); }
+.rt-card--minor .rt-card-header { background: linear-gradient(135deg, #1a3a6e 0%, #1a6ef5 100%); }
+.rt-card--maintenance .rt-card-header { background: linear-gradient(135deg, #064e3b 0%, #059669 100%); }
+.rt-card--patch .rt-card-header { background: linear-gradient(135deg, #78350f 0%, #d97706 100%); }
+
+.rt-version-example {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+}
+.rt-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.rt-badge--major { background: rgba(255,255,255,0.15); color: white; }
+.rt-badge--minor { background: rgba(255,255,255,0.2); color: white; }
+.rt-badge--maintenance { background: rgba(255,255,255,0.2); color: white; }
+.rt-badge--patch { background: rgba(255,255,255,0.2); color: white; }
+
+.rt-card-body { padding: 14px 16px; }
+.rt-desc {
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.rt-attrs {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.rt-attr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.rt-attr--yes { color: #065f46; }
+.rt-attr--yes svg { color: #059669; }
+.rt-attr--no { color: var(--text-3); }
+.rt-attr--no svg { color: #9ca3af; }
+
+.rt-upgrade-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+/* Maintenance upgrade order */
+.rt-upgrade-order {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.rt-upgrade-order-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+.rt-upgrade-order-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rt-order-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  padding: 5px 8px;
+  border-radius: 5px;
+}
+.rt-order-step--fleet {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+.rt-order-step--instance {
+  background: var(--accent-light);
+  color: #1050c8;
+}
+.rt-order-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+.rt-order-arrow {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+  padding: 1px 0 1px 8px;
+  line-height: 1;
+}
+
+/* Pattern cards */
+.rt-pattern-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+}
+.rt-pattern-card--unified {
+  background: linear-gradient(135deg, #f0f6ff, #f0ebff);
+  border-color: #c4b5fd;
+}
+.rt-pattern-card--selective {
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border-color: #6ee7b7;
+}
+.rt-pattern-icon { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.rt-pattern-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.rt-pattern-desc { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+</style>
+
+<footer>
+  Built by <a href="https://vmtechie.blog">vmtechie.blog</a> &mdash; Independent planning tool, not affiliated with Broadcom Inc. &mdash; Always validate against official Broadcom documentation before proceeding.
+</footer>
+
+<script>
+// =============================================
+// DATA: UPGRADE PATH DEFINITIONS
+// =============================================
+
+const UPGRADE_PATHS = {
+
+  vs70_vcf90: {
+    label: "vSphere 7.0 → VCF 9.0.x",
+    hops: ["vSphere 7.0", "vSphere 7.0 U3", "vSphere 8.0 U3", "VCF 9.0"],
+    complexity: { steps: 70, risk: 65, effort: 65, duration: "5-9 weeks" },
+    warning: "HOST UPGRADE — CONVERGE PREREQUISITE: Minimum host versions vary by target VCF release and NSX state. ESXi 8.0 U1a+ for VCF 9.0.1 with existing NSX; stricter for VCF 9.0.0. Verify supported converge scenarios in Broadcom TechDocs before scheduling.",
+    steps: [
+      {
+        num: 1, type: "pre", title: "Pre-Upgrade Assessment & HCL Check",
+        desc: "Validate hardware compatibility for vSphere 8.0 and VCF 9.0.",
+        prereqs: [
+          "Verify all hosts on HCL for ESXi 8.0 and VCF 9.0",
+          "Confirm CPU generation (AVX required for VCF 9.0)",
+          "Check vSAN drive compatibility (OSA vs ESA)",
+          "Run vCenter Pre-Check from VAMI",
+          "Plan rollback strategy — snapshots only protect up to the point taken"
+        ],
+        kbs: ["KB 318731", "KB 308161", "Blog: VCF 9.0 Server Certification", "BCG Compatibility"], warning: null
+      },
+      {
+        num: 2, type: "backup", title: "Full Backup",
+        desc: "Back up all management components before starting.",
+        prereqs: [
+          "vCenter VAMI file-based backup to external location",
+          "NSX backup via NSX Manager UI",
+          "Export distributed switch configurations"
+        ],
+        kbs: ["KB 317899"], warning: null
+      },
+      {
+        num: 3, type: "upgrade", title: "Patch to vSphere 7.0 U3",
+        desc: "Apply latest 7.0 U3 patches to vCenter and ESXi hosts.",
+        prereqs: ["vCenter 7.0 U3 latest patch", "ESXi 7.0 U3 on all hosts via vLCM"],
+        kbs: ["KB 326926"], warning: null
+      },
+      {
+        num: 4, type: "upgrade", title: "Upgrade vCenter → 8.0 U3",
+        desc: "In-place upgrade using vCenter installer ISO.",
+        prereqs: ["vCenter 8.0 U3 ISO downloaded", "Incompatible plug-ins removed"],
+        kbs: ["KB 85201"], warning: null
+      },
+      {
+        num: 5, type: "upgrade", title: "Upgrade ESXi Hosts → 8.0 U3",
+        desc: "Rolling ESXi upgrade via vLCM to meet converge minimum version requirements.",
+        prereqs: [
+          "ESXi 8.0 U3 depot in vLCM",
+          "vSAN cluster healthy before rolling upgrade",
+          "Transition clusters from Baselines to vLCM Images"
+        ],
+        kbs: ["KB 88929"], warning: null
+      },
+      {
+        num: 6, type: "pre", title: "Pre-Converge Readiness Check",
+        desc: "Validate all VCF Installer prerequisites.",
+        prereqs: [
+          "Break ELM if active — not supported during converge",
+          "VDS 8.0+ on all clusters",
+          "DRS Fully Automated",
+          "Clusters on vLCM Images",
+          "Static VMkernel IPs only",
+          "Minimum 3 hosts (vSAN) or 2 hosts (external storage)"
+        ],
+        kbs: ["KB 390098", "Blog: Converge vSphere to VCF 9.0"],
+        warning: "VCF 9.0.0 deploys new NSX 9.0 during converge. VCF 9.0.1+ supports converging existing NSX 4.1.0.2+ (without ELM)."
+      },
+      {
+        num: 7, type: "convert", title: "Run VCF Installer — Converge to VCF 9.0",
+        desc: "Converge existing vSphere to VCF 9.0 management domain. Verify your exact scenario in Broadcom TechDocs before execution.",
+        prereqs: [
+          "VCF Installer 9.0 deployed",
+          "Planning and Preparation Workbook completed",
+          "VCF 9.0 licenses available",
+          "DNS/NTP ready",
+          "NSX deployment model selected (HA or Simple-node)"
+        ],
+        kbs: ["KB 390098", "KB 90795", "TechDocs Converge Scenarios", "Blog: Converge vSphere to VCF 9.0", "Blog: VCF 9 Deployment Pathways"],
+        warning: "Converge covers management domain only. Import workload vCenters via VCF Operations afterward."
+      },
+      {
+        num: 8, type: "validate", title: "Validation & Workload Domain Import",
+        desc: "Verify VCF 9.0 health and import workload infrastructure.",
+        prereqs: [
+          "Management domain healthy",
+          "NSX and vSAN no critical alerts",
+          "Import workload vCenters via VCF Operations",
+          "Assign VCF 9.0 licenses"
+        ],
+        kbs: ["KB 90795"], warning: null
+      }
+    ]
+  },
+
+  vs70u2_vcf90: {
+    label: "vSphere 7.0 U2/U3 → VCF 9.0.x",
+    hops: ["vSphere 7.0 U2/U3", "vSphere 8.0 U3", "VCF 9.0"],
+    complexity: { steps: 60, risk: 55, effort: 60, duration: "4-8 weeks" },
+    warning: null,
+    steps: [
+      {
+        num: 1, type: "pre", title: "Pre-Upgrade Assessment",
+        desc: "Document environment, check HCL for vSphere 8.0 and VCF 9.0.",
+        prereqs: [
+          "Verify all hosts on HCL for ESXi 8.0",
+          "Check vSAN drive compatibility",
+          "Plan rollback strategy before starting"
+        ],
+        kbs: ["KB 318731", "Blog: VCF 9.0 Server Certification", "BCG Compatibility"], warning: null
+      },
+      {
+        num: 2, type: "backup", title: "Full Backup",
+        desc: "vCenter and NSX backup before any changes.",
+        prereqs: ["vCenter VAMI backup to external location", "NSX Manager backup"],
+        kbs: ["KB 317899"], warning: null
+      },
+      {
+        num: 3, type: "upgrade", title: "Upgrade vCenter → 8.0 U3",
+        desc: "In-place upgrade using vCenter installer.",
+        prereqs: ["vCenter 8.0 U3 ISO", "Plug-in compatibility verified"],
+        kbs: ["KB 85201"], warning: null
+      },
+      {
+        num: 4, type: "upgrade", title: "Upgrade ESXi Hosts → 8.0 U3",
+        desc: "Rolling upgrade via vLCM.",
+        prereqs: ["ESXi 8.0 U3 depot in vLCM", "Transition clusters to vLCM Images"],
+        kbs: ["KB 88929"], warning: null
+      },
+      {
+        num: 5, type: "pre", title: "Pre-Converge Readiness Check",
+        desc: "Validate VCF Installer prerequisites.",
+        prereqs: [
+          "Break ELM if active",
+          "VDS 8.0+ on all clusters",
+          "DRS Fully Automated",
+          "Clusters on vLCM Images",
+          "Static VMkernel IPs",
+          "Verify minimum versions for your target converge scenario (TechDocs)"
+        ],
+        kbs: ["KB 390098", "TechDocs Converge Scenarios"],
+        warning: "VCF 9.0.0 deploys new NSX; VCF 9.0.1+ can reuse existing NSX 4.1.0.2+ (without ELM)."
+      },
+      {
+        num: 6, type: "convert", title: "Run VCF Installer — Converge to VCF 9.0",
+        desc: "Converge to VCF 9.0 management domain. Verify your exact scenario in Broadcom TechDocs before execution.",
+        prereqs: ["VCF Installer 9.0 deployed", "Planning Workbook completed", "Licenses and DNS/NTP ready"],
+        kbs: ["KB 390098", "KB 90795"], warning: null
+      },
+      {
+        num: 7, type: "validate", title: "Post-Conversion Validation",
+        desc: "Verify domain health and import workload vCenters.",
+        prereqs: ["All domains healthy", "Import workload vCenters via VCF Operations"],
+        kbs: ["KB 90795"], warning: null
+      }
+    ]
+  },
+
+  vs80_vcf90: {
+    label: "vSphere 8.0 → VCF 9.0.x",
+    hops: ["vSphere 8.0", "vSphere 8.0 U3", "VCF 9.0"],
+    complexity: { steps: 45, risk: 40, effort: 45, duration: "3-6 weeks" },
+    warning: null,
+    steps: [
+      {
+        num: 1, type: "pre", title: "Pre-Upgrade Assessment",
+        desc: "Verify vCenter 8.0 U3 readiness, HCL, and NSX version compatibility.",
+        prereqs: [
+          "HCL check for VCF 9.0 components",
+          "NSX 4.2+ required",
+          "Clusters on vLCM Images (not Baselines)"
+        ],
+        kbs: ["KB 318731", "Blog: VCF 9.0 Server Certification", "BCG Compatibility"], warning: null
+      },
+      {
+        num: 2, type: "backup", title: "Full Backup",
+        desc: "Backup vCenter and NSX before any changes.",
+        prereqs: ["vCenter VAMI backup", "NSX Manager backup", "VDS config export"],
+        kbs: ["KB 317899"], warning: null
+      },
+      {
+        num: 3, type: "upgrade", title: "Patch vCenter to 8.0 U3",
+        desc: "Apply 8.0 U3 patch via VAMI or vLCM.",
+        prereqs: ["8.0 U3 patch downloaded"],
+        kbs: ["KB 85201"], warning: null
+      },
+      {
+        num: 4, type: "upgrade", title: "Patch ESXi Hosts to 8.0 U3",
+        desc: "Rolling patch via vLCM.",
+        prereqs: ["ESXi 8.0 U3 depot in vLCM", "Transition clusters to vLCM Images if not done"],
+        kbs: ["KB 88929"], warning: null
+      },
+      {
+        num: 5, type: "pre", title: "Pre-Converge Readiness Check",
+        desc: "Validate VCF Installer prerequisites. For VCF 9.0.1+ on 8.0 U1a+ with NSX 4.1.0.2+, no pre-upgrade to vSphere 9 required.",
+        prereqs: [
+          "Break ELM if active",
+          "VDS 8.0+ on all clusters",
+          "DRS Fully Automated",
+          "Clusters on vLCM Images",
+          "Static VMkernel IPs",
+          "Verify minimum versions for your target converge scenario (TechDocs)"
+        ],
+        kbs: ["KB 390098"], warning: null
+      },
+      {
+        num: 6, type: "convert", title: "Run VCF Installer — Converge to VCF 9.0",
+        desc: "VCF Installer creates the VCF 9.0 management domain. Verify your scenario in Broadcom TechDocs before execution.",
+        prereqs: ["VCF Installer 9.0 deployed", "Planning Workbook completed", "Licenses and DNS/NTP ready"],
+        kbs: ["KB 390098", "KB 90795", "TechDocs Converge Scenarios", "Blog: Converge vSphere to VCF 9.0", "Blog: VCF 9 Deployment Pathways"],
+        warning: "VCF 9.0.0 deploys new NSX 9.0; VCF 9.0.1+ reuses existing NSX 4.1.0.2+ (no ELM). Import workload vCenters via VCF Operations after converge."
+      },
+      {
+        num: 7, type: "validate", title: "VCF 9.0 Validation",
+        desc: "Verify domain health and import workload vCenters.",
+        prereqs: ["Management domain healthy", "NSX/vSAN healthy", "Import workload vCenters via VCF Operations"],
+        kbs: ["KB 90795"], warning: null
+      }
+    ]
+  },
+
+  vs80u2_vcf90: {
+    label: "vSphere 8.0 U2/U3 → VCF 9.0.x",
+    hops: ["vSphere 8.0 U2/U3", "VCF 9.0"],
+    complexity: { steps: 35, risk: 30, effort: 35, duration: "2-4 weeks" },
+    warning: null,
+    steps: [
+      {
+        num: 1, type: "pre", title: "Pre-Converge Readiness Check",
+        desc: "Most direct conversion path. Verify your exact scenario in Broadcom TechDocs supported-scenarios.",
+        prereqs: [
+          "Break ELM if active",
+          "VDS 8.0+ on all clusters",
+          "DRS Fully Automated",
+          "Clusters on vLCM Images",
+          "Static VMkernel IPs",
+          "NSX 4.1.0.2+ without ELM (for VCF 9.0.1 converge)"
+        ],
+        kbs: ["KB 390098"],
+        warning: "VCF 9.0.0 deploys new NSX 9.0. VCF 9.0.1 can reuse existing NSX 4.1.0.2+ without ELM."
+      },
+      {
+        num: 2, type: "backup", title: "Full Backup",
+        desc: "Final backup before conversion.",
+        prereqs: ["vCenter VAMI backup", "NSX Manager backup", "VDS config export"],
+        kbs: ["KB 317899"], warning: null
+      },
+      {
+        num: 3, type: "convert", title: "Run VCF Installer — Converge to VCF 9.0",
+        desc: "Deploy VCF Installer 9.0 and run convergence workflow. Verify exact scenario in Broadcom TechDocs before execution.",
+        prereqs: [
+          "VCF Installer 9.0 OVA deployed",
+          "Planning and Preparation Workbook completed",
+          "VCF 9.0 licenses, DNS/NTP ready",
+          "NSX deployment model selected (HA or Simple-node)"
+        ],
+        kbs: ["KB 390098", "KB 90795", "Blog: Converge vSphere to VCF 9.0", "Blog: VCF 9 Deployment Pathways"],
+        warning: "Converge creates management domain only. Import workload vCenters via VCF Operations afterward."
+      },
+      {
+        num: 4, type: "finalize", title: "Post-Converge Finalization",
+        desc: "Complete post-converge tasks for the management domain.",
+        prereqs: [
+          "Upgrade VDS version",
+          "Upgrade vSAN on-disk format",
+          "Configure VCF 9.0 licensing via VCF Operations",
+          "Deploy VCF Identity Broker per Broadcom design guidance",
+          "Import workload vCenters via VCF Operations",
+          "Apply VCF 9.0.2 — includes critical NSX Edge OVF certificate fix (KB 424034)"
+        ],
+        kbs: ["KB 90795"],
+        warning: "Future maintenance upgrade order: Fleet Management → VCF Operations → fleet components → SDDC Manager → NSX → vCenter → ESXi."
+      },
+      {
+        num: 5, type: "validate", title: "Final Validation",
+        desc: "Confirm environment is stable and fully upgraded.",
+        prereqs: [
+          "All domains healthy, licensing confirmed",
+          "NSX/vSAN healthy, on-disk format upgraded",
+          "Remove pre-upgrade snapshots",
+          "Take fresh backup of all upgraded components"
+        ],
+        kbs: ["KB 90795"], warning: null
+      }
+    ]
+  },
+
+  vcf50_vcf90: {
+    label: "VCF 5.0 → VCF 9.0.x",
+    hops: ["VCF 5.0", "VCF 5.2", "Aria Pre-Upgrade", "VCF 9.0", "Finalize"],
+    complexity: { steps: 65, risk: 50, effort: 65, duration: "4-8 weeks" },
+    warning: null,
+    steps: [
+      {
+        num: 1, type: "pre", title: "Assessment, Planning & Prerequisites",
+        desc: "Review VCF 9.0 Planning Workbook, validate hardware, and configure depot access.",
+        prereqs: [
+          "Download VCF 9.0 Planning and Preparation Workbook",
+          "Validate hardware against VCF Compatibility Guide",
+          "Configure SDDC Manager core depot and Fleet Management depot (configure independently)",
+          "Download all upgrade bundles before maintenance window",
+          "Transition all clusters to vLCM Images — Baselines deprecated in VCF 9.0 (KB 418243)",
+          "vSAN: OSA → OSA is standard path; OSA → ESA is a separate post-upgrade migration (see Blog: VCF 9 Storage Options)",
+          "Run SDDC Manager upgrade prechecks; resolve all blocking findings"
+        ],
+        kbs: ["KB 79086", "KB 90795", "Blog: VCF 9 Paths to Adoption", "Blog: Support Upgrade Playbook", "Blog: Planning VCF 9.0 Deployment"], warning: null
+      },
+      {
+        num: 2, type: "backup", title: "Full Backup",
+        desc: "Back up all management components before starting.",
+        prereqs: [
+          "SDDC Manager SOS config export — copy to external location",
+          "vCenter VAMI backup to external NFS/SFTP",
+          "NSX backup to registered SFTP server",
+          "Offline snapshots of Aria appliances"
+        ],
+        kbs: ["KB 83829"], warning: null
+      },
+      {
+        num: 3, type: "upgrade", title: "Upgrade VCF 5.0 → VCF 5.2",
+        desc: "Required intermediate step — SDDC Manager 5.2 unlocks VCF 9.0 bundles. Order: SDDC Manager → vCenter → NSX → ESXi.",
+        prereqs: [
+          "Upgrade SDDC Manager to 5.2 first",
+          "Run Configuration Drift check after SDDC Manager reaches 5.2",
+          "vCenter 8.0 U3 via Reduced Downtime Upgrade (RDU) — stage temporary IP",
+          "Run NSX Upgrade Coordinator pre-check independently before triggering LCM",
+          "Transition all clusters to vLCM Images during this step — safer at 5.2 than mid-9.0"
+        ],
+        kbs: ["KB 79086"],
+        warning: "SDDC Manager must reach 5.2 before vCenter 8.0 U3, NSX 4.2, and ESXi 8.0 U3 bundles appear in depot."
+      },
+      {
+        num: 4, type: "aria", title: "Management Plane Transition: Aria Operations → VCF Operations 9.0",
+        desc: "VCF Operations is mandatory in VCF 9.0. Fleet Management must be established first before any other Aria upgrade.",
+        prereqs: [
+          "GATE: Aria Operations must be on 8.18",
+          "Transition Aria Suite Lifecycle → Fleet Management 9.0 first",
+          "Upgrade Aria Operations 8.18 → VCF Operations 9.0 via Fleet Management",
+          "Ops for Logs: fresh deployment required — no in-place upgrade (see dedicated step)",
+          "If Aria not installed: deploy VCF Operations 9.0 post-upgrade via SDDC Manager API",
+          "Post-transition: Licensing, Certificates, Passwords move permanently into VCF Operations"
+        ],
+        kbs: ["KB 90795", "KB 382585", "Blog: VCF 9 Operations & Management"],
+        warning: "Fleet Management must be in place before any Aria component upgrade. Do not start SDDC Manager/vCenter/NSX/ESXi upgrades until complete."
+      },
+      {
+        num: 5, type: "aria", title: "Upgrade Aria Automation → VCF Automation 9.0 (if deployed)",
+        desc: "Not required for core VCF upgrade. Treat as an independent workstream.",
+        prereqs: [
+          "Import Aria Automation into Fleet Management",
+          "Execute upgrade from Fleet Management",
+          "Validate integrations and workflows post-upgrade"
+        ],
+        kbs: ["KB 90795"], warning: null
+      },
+      {
+        num: 6, type: "aria", title: "Re-deploy VCF Operations for Logs 9.0 (No In-Place Upgrade)",
+        desc: "No in-place upgrade supported. Fresh appliance deployment required.",
+        prereqs: [
+          "Deploy new VCF Operations for Logs 9.0 appliance",
+          "Use 90-day transfer utility to migrate historical logs if needed",
+          "Connect to Fleet Management; decommission 8.18 per retention policy"
+        ],
+        kbs: ["LCM Mgmt Components"],
+        warning: "In-place upgrade not supported. Fresh deployment always required (KB 402314)."
+      },
+      {
+        num: 7, type: "aria", title: "Upgrade Aria Operations for Networks → VCF Operations for Networks 9.0 (if deployed)",
+        desc: "Optional — not required for core VCF upgrade. Can be deferred.",
+        prereqs: ["Must be on version 6.13 before upgrading", "Import into Fleet Management and execute upgrade"],
+        kbs: ["KB 90795"], warning: null
+      },
+      {
+        num: 8, type: "upgrade", title: "Upgrade SDDC Manager → 9.0",
+        desc: "Upgrade SDDC Manager via LCM. Stage 5.2.1.0 intermediate bundles first if on 5.2.0.0 targeting 9.0.1.",
+        prereqs: [
+          "Stage 5.2.1.0 bundles if needed (KB 397327)",
+          "VCF 9.0 bundle downloaded and precheck passes",
+          "Re-download component bundles if LCM requires post-upgrade (KB 399237)"
+        ],
+        kbs: ["KB 90795", "KB 397327", "KB 399237"], warning: null
+      },
+      {
+        num: 9, type: "pre", title: "Import ESXi 9.0 vLCM Image",
+        desc: "Import ESXi 9.0 image into SDDC Manager. Only possible after SDDC Manager reaches 9.0.",
+        prereqs: [
+          "Import ESXi 9.0 ISO into vCenter Lifecycle Manager depot",
+          "Create image in vCenter Image Library with vendor add-ons",
+          "Import into SDDC Manager and assign to all clusters"
+        ],
+        kbs: ["KB 83829", "LCM Core Components"],
+        warning: "Do not import before SDDC Manager reaches 9.0 — metadata sync will fail."
+      },
+      {
+        num: 10, type: "upgrade", title: "Upgrade NSX → NSX 9.0",
+        desc: "Upgrade via SDDC Manager Plan Upgrade. Serial order only: Coordinator → Edge nodes → Managers.",
+        prereqs: [
+          "Run NSX Upgrade Coordinator pre-check independently before LCM trigger",
+          "Serial upgrade order: Coordinator → Edge → Managers",
+          "NSX binaries now bundle with ESX — no separate host VIB update needed"
+        ],
+        kbs: ["KB 90795", "KB 410550"],
+        warning: "Once NSX and downstream components begin upgrading, rollback is constrained. Review KB 410550 before scheduling."
+      },
+      {
+        num: 11, type: "upgrade", title: "Upgrade vCenter → 9.0 (Reduced Downtime Upgrade)",
+        desc: "vCenter 9.0 uses RDU exclusively. VCF 9.0.1+ auto-assigns link-local IP for migration.",
+        prereqs: [
+          "Confirm temporary IP approach (link-local auto or static)",
+          "Sufficient datastore space for temporary vCenter appliance"
+        ],
+        kbs: ["KB 90795"], warning: null
+      },
+      {
+        num: 12, type: "upgrade", title: "Upgrade ESXi Hosts → ESXi 9.0",
+        desc: "Upgrade per cluster. vLCM Images mandatory — Baselines not supported.",
+        prereqs: [
+          "All clusters on vLCM Images before starting",
+          "ESXi 9.0 image assigned to clusters in SDDC Manager",
+          "DRS Fully Automated — rolling per-host reboot"
+        ],
+        kbs: ["KB 90795", "KB 92018"],
+        warning: "Baselines not supported in ESXi 9.0. Verify cluster eligibility before transitioning (KB 418243)."
+      },
+      {
+        num: 13, type: "finalize", title: "Finalize Management Domain",
+        desc: "Complete finalization tasks before upgrading workload domains.",
+        prereqs: [
+          "Upgrade VDS version",
+          "Upgrade vSAN on-disk format",
+          "Configure licensing via VCF Operations",
+          "Remove pre-upgrade snapshots; take fresh backup",
+          "Apply VCF 9.0.2 — critical NSX Edge OVF certificate fix (KB 424034)"
+        ],
+        kbs: ["KB 90795"],
+        warning: "Future maintenance upgrade order: Fleet Management → VCF Operations → fleet → SDDC Manager → NSX → vCenter → ESXi."
+      },
+      {
+        num: 14, type: "workload", title: "Upgrade VCF Workload Domains to 9.0",
+        desc: "All workload domains must be at VCF 5.0+ before upgrading. Upgrade via VCF Operations.",
+        prereqs: [
+          "Confirm all workload domains at VCF 5.0+",
+          "Per domain upgrade order: NSX → vCenter (RDU) → ESXi",
+          "Transition clusters to vLCM Images before ESXi upgrade",
+          "Upgrade Supervisor (Tanzu), VDS, vSAN on-disk format where applicable",
+          "Add NFS static route post-upgrade if using NFS storage"
+        ],
+        kbs: ["KB 90795", "WLD Upgrade Guide", "LCM Core Components"],
+        warning: "SDDC Manager UI is deprecated. Use VCF Operations for all lifecycle management going forward."
+      },
+      {
+        num: 15, type: "validate", title: "Final Validation",
+        desc: "Confirm environment is fully upgraded and healthy.",
+        prereqs: [
+          "All domains at VCF 9.0, NSX/vSAN healthy",
+          "VDS upgraded, licensing confirmed",
+          "Remove all pre-upgrade snapshots",
+          "Take full backup of all upgraded components",
+          "Migrate lifecycle management to VCF Operations"
+        ],
+        kbs: ["KB 90795"], warning: null
+      }
+    ]
+  },
+
+  vcf51_vcf90: {
+    label: "VCF 5.1/5.2 → VCF 9.0",
+    hops: ["VCF 5.1/5.2", "Aria Pre-Upgrade", "VCF 9.0", "Finalize"],
+    complexity: { steps: 55, risk: 40, effort: 55, duration: "3-6 weeks" },
+    warning: null,
+    steps: [
+      {
+        num: 1, type: "pre", title: "Assessment, Planning & Prerequisites",
+        desc: "Review VCF 9.0 Planning Workbook, validate hardware, configure depot.",
+        prereqs: [
+          "Download VCF 9.0 Planning and Preparation Workbook",
+          "Validate hardware against VCF Compatibility Guide",
+          "If on VCF 5.1: upgrade SDDC Manager to 5.2 first — unlocks VCF 9.0 bundles",
+          "Configure SDDC Manager core depot and Fleet Management depot independently",
+          "Transition all clusters to vLCM Images at 5.2 — safer than converting mid-9.0",
+          "Run SDDC Manager upgrade prechecks; resolve all blocking findings"
+        ],
+        kbs: ["KB 79086", "KB 90795", "Blog: VCF 9 Paths to Adoption", "Blog: Support Upgrade Playbook", "Blog: Planning VCF 9.0 Deployment"], warning: null
+      },
+      {
+        num: 2, type: "backup", title: "Full Backup",
+        desc: "Back up all management components.",
+        prereqs: [
+          "SDDC Manager SOS config export to external location",
+          "vCenter VAMI backup to external NFS/SFTP",
+          "NSX backup to registered SFTP server",
+          "Offline snapshots of Aria appliances"
+        ],
+        kbs: ["KB 83829"], warning: null
+      },
+      {
+        num: 3, type: "aria", title: "Management Plane Transition: Aria Operations → VCF Operations 9.0",
+        desc: "VCF Operations is mandatory in VCF 9.0. Establish Fleet Management first before any other Aria upgrade.",
+        prereqs: [
+          "GATE: Aria Operations must be on 8.18",
+          "Transition Aria Suite Lifecycle → Fleet Management 9.0 first",
+          "Upgrade Aria Operations 8.18 → VCF Operations 9.0 via Fleet Management",
+          "Ops for Logs: fresh deployment required (see dedicated step)",
+          "If Aria not installed: deploy VCF Operations 9.0 post-upgrade via SDDC Manager API",
+          "Post-transition: Licensing, Certificates, Passwords move permanently into VCF Operations"
+        ],
+        kbs: ["KB 90795", "KB 382585", "Blog: VCF 9 Operations & Management"],
+        warning: "Fleet Management must be in place before any Aria component upgrade. Do not start SDDC Manager/vCenter/NSX/ESXi upgrades until complete."
+      },
+      {
+        num: 4, type: "aria", title: "Upgrade Aria Automation → VCF Automation 9.0 (if deployed)",
+        desc: "Not required for core VCF upgrade. Treat as an independent workstream.",
+        prereqs: [
+          "Import Aria Automation into Fleet Management",
+          "Execute upgrade from Fleet Management",
+          "Validate integrations and workflows post-upgrade"
+        ],
+        kbs: ["KB 90795"], warning: null
+      },
+      {
+        num: 5, type: "aria", title: "Re-deploy VCF Operations for Logs 9.0 (No In-Place Upgrade)",
+        desc: "No in-place upgrade supported. Fresh appliance deployment required.",
+        prereqs: [
+          "Deploy new VCF Operations for Logs 9.0 appliance",
+          "Use 90-day transfer utility to migrate historical logs if needed",
+          "Connect to Fleet Management; decommission 8.18 per retention policy"
+        ],
+        kbs: ["LCM Mgmt Components"],
+        warning: "In-place upgrade not supported. Fresh deployment always required (KB 402314)."
+      },
+      {
+        num: 6, type: "aria", title: "Upgrade Aria Operations for Networks → VCF Operations for Networks 9.0 (if deployed)",
+        desc: "Optional — not required for core VCF upgrade. Can be deferred.",
+        prereqs: ["Must be on version 6.13 before upgrading", "Import into Fleet Management and execute upgrade"],
+        kbs: ["KB 90795"], warning: null
+      },
+      {
+        num: 7, type: "upgrade", title: "Upgrade SDDC Manager → 9.0",
+        desc: "Upgrade via LCM. Stage 5.2.1.0 intermediate bundles first if on 5.2.0.0 targeting 9.0.1.",
+        prereqs: [
+          "Stage 5.2.1.0 bundles if on 5.2.0.0 targeting 9.0.1 (KB 397327)",
+          "VCF 9.0 bundle downloaded and precheck passes",
+          "Re-download component bundles if LCM requires post-upgrade (KB 399237)"
+        ],
+        kbs: ["KB 90795", "KB 397327", "KB 399237"], warning: null
+      },
+      {
+        num: 8, type: "pre", title: "Import ESXi 9.0 vLCM Image",
+        desc: "Import ESXi 9.0 image into SDDC Manager. Only possible after SDDC Manager reaches 9.0.",
+        prereqs: [
+          "Import ESXi 9.0 ISO into vCenter Lifecycle Manager depot",
+          "Create image in vCenter Image Library with vendor add-ons",
+          "Import into SDDC Manager and assign to all clusters"
+        ],
+        kbs: ["KB 83829", "LCM Core Components"],
+        warning: "Do not import before SDDC Manager reaches 9.0."
+      },
+      {
+        num: 9, type: "upgrade", title: "Upgrade NSX → NSX 9.0",
+        desc: "Upgrade via SDDC Manager. Serial order only: Coordinator → Edge nodes → Managers.",
+        prereqs: [
+          "Run NSX Upgrade Coordinator pre-check independently before LCM trigger",
+          "Serial order: Coordinator → Edge → Managers",
+          "NSX binaries bundle with ESX in VCF 9.0 — no separate host VIB update needed"
+        ],
+        kbs: ["KB 90795", "KB 410550"],
+        warning: "Once downstream components begin upgrading, rollback is constrained. Review KB 410550 before scheduling."
+      },
+      {
+        num: 10, type: "upgrade", title: "Upgrade vCenter → 9.0 (Reduced Downtime Upgrade)",
+        desc: "vCenter 9.0 uses RDU exclusively. VCF 9.0.1+ auto-assigns link-local IP for migration.",
+        prereqs: [
+          "Confirm temporary IP approach (link-local auto or static)",
+          "Sufficient datastore space for temporary vCenter appliance"
+        ],
+        kbs: ["KB 90795"], warning: null
+      },
+      {
+        num: 11, type: "upgrade", title: "Upgrade ESXi Hosts → ESXi 9.0",
+        desc: "Upgrade per cluster. vLCM Images mandatory — Baselines not supported.",
+        prereqs: [
+          "All clusters on vLCM Images before starting",
+          "ESXi 9.0 image assigned to clusters in SDDC Manager",
+          "DRS Fully Automated — rolling per-host reboot"
+        ],
+        kbs: ["KB 90795", "KB 92018"],
+        warning: "Baselines not supported in ESXi 9.0. Verify cluster eligibility (KB 418243)."
+      },
+      {
+        num: 12, type: "finalize", title: "Finalize Management Domain",
+        desc: "Complete finalization before upgrading workload domains.",
+        prereqs: [
+          "Upgrade VDS version",
+          "Upgrade vSAN on-disk format",
+          "Configure licensing via VCF Operations",
+          "Remove pre-upgrade snapshots; take fresh backup",
+          "Apply VCF 9.0.2 — critical NSX Edge OVF certificate fix (KB 424034)"
+        ],
+        kbs: ["KB 90795"],
+        warning: "Future maintenance upgrade order: Fleet Management → VCF Operations → fleet → SDDC Manager → NSX → vCenter → ESXi."
+      },
+      {
+        num: 13, type: "workload", title: "Upgrade VCF Workload Domains to 9.0",
+        desc: "All workload domains must be at VCF 5.0+. Upgrade via VCF Operations.",
+        prereqs: [
+          "Confirm all workload domains at VCF 5.0+",
+          "Per domain: NSX → vCenter (RDU) → ESXi",
+          "Transition clusters to vLCM Images before ESXi upgrade",
+          "Upgrade Supervisor (Tanzu), VDS, vSAN on-disk format where applicable",
+          "Add NFS static route post-upgrade if using NFS storage"
+        ],
+        kbs: ["KB 90795", "WLD Upgrade Guide", "LCM Core Components"],
+        warning: "SDDC Manager UI is deprecated. Use VCF Operations for lifecycle management going forward."
+      },
+      {
+        num: 14, type: "validate", title: "Final Validation",
+        desc: "Confirm environment is fully upgraded and healthy.",
+        prereqs: [
+          "All domains at VCF 9.0, NSX/vSAN healthy",
+          "VDS upgraded, licensing confirmed",
+          "Remove all pre-upgrade snapshots; take full backup",
+          "Migrate lifecycle management to VCF Operations"
+        ],
+        kbs: ["KB 90795"], warning: null
+      }
+    ]
+  },
+
+  vcf90_vcf902: {
+    label: "VCF 9.0.0 / 9.0.1 → VCF 9.0.2",
+    hops: ["VCF 9.0.0/9.0.1", "VCF 9.0.2"],
+    complexity: { steps: 7, risk: 20, effort: 25, duration: "4–8 hrs" },
+    warning: "VCF 9.0.2 (20 Jan 2026) is a maintenance release. Upgrade Fleet Management first, then SDDC Manager before any core component. NSX 9.0.2 resolves the critical Edge OVF certificate expiry issue (expired Jan 3 2026 — KB 424034/424036).",
+    steps: [
+      {
+        num: 1, type: "backup", title: "Pre-Upgrade Snapshot & Backup",
+        desc: "Snapshot all management appliances and verify backups before starting.",
+        prereqs: [
+          "Snapshot Fleet Management, SDDC Manager, vCenter, NSX Manager nodes",
+          "Verify SDDC Manager file-based backup is current",
+          "Export distributed switch configurations"
+        ],
+        kbs: ["KB 318731", "Blog: VCF 9.0 Server Certification", "BCG Compatibility"], warning: null
+      },
+      {
+        num: 2, type: "upgrade", title: "Upgrade Fleet Management to 9.0.2",
+        desc: "Fleet Management must be upgraded first — it orchestrates all other management component upgrades.",
+        prereqs: [
+          "Download Fleet Management 9.0.2 binary from VCF Operations Binary Management",
+          "Apply 9.0.2 patch via Fleet Management → Settings → System Patches",
+          "Download 9.0.2 packages for all deployed management components after Fleet Management upgrade"
+        ],
+        kbs: ["LCM Mgmt Components"], warning: null
+      },
+      {
+        num: 3, type: "aria", title: "Upgrade VCF Management Components to 9.0.2",
+        desc: "Upgrade VCF Operations, Automation, Logs, and Networks via Fleet Management.",
+        prereqs: [
+          "Run APUAT tool for VCF Operations before upgrading",
+          "Upgrade order: VCF Operations → Ops for Logs → Ops for Networks → VCF Automation",
+          "VCF Automation upgrade is optional if custom integrations need separate testing"
+        ],
+        kbs: ["LCM Mgmt Components"],
+        warning: "Monitor disk usage on Fleet Manager appliance — disk space errors can occur during upgrade."
+      },
+      {
+        num: 4, type: "upgrade", title: "Upgrade SDDC Manager to 9.0.2",
+        desc: "Upgrade SDDC Manager before NSX, vCenter, or ESXi — this is mandatory ordering in VCF 9.x.",
+        prereqs: [
+          "Download SDDC Manager 9.0.2 via Fleet Management Binary Management",
+          "Snapshot SDDC Manager; run precheck — all green before proceeding",
+          "SDDC Manager must lead all core component upgrades"
+        ],
+        kbs: ["KB 382585", "LCM Core Components"],
+        warning: "Do not upgrade NSX, vCenter, or ESXi before SDDC Manager. Restore from snapshot if upgrade fails before retrying."
+      },
+      {
+        num: 5, type: "upgrade", title: "Upgrade NSX to 9.0.2",
+        desc: "NSX 9.0.2 resolves the critical Edge OVF certificate expiry. Strongly recommended if you need to deploy or resize Edge nodes.",
+        prereqs: [
+          "Download NSX 9.0.2 bundle via Binary Management",
+          "Run NSX upgrade pre-check; resolve all errors",
+          "Serial upgrade: Coordinator → Edge nodes → Managers",
+          "NSX binaries bundle with ESX — no separate host VIB update"
+        ],
+        kbs: ["KB 424034", "KB 424036", "LCM Core Components"],
+        warning: "Edge node deployment/resize will FAIL on NSX 9.0.0/9.0.1 until upgraded to 9.0.2 (KB 424034, KB 424036)."
+      },
+      {
+        num: 6, type: "upgrade", title: "Upgrade vCenter to 9.0.2",
+        desc: "Within 9.x: regular in-place upgrade, no RDU required.",
+        prereqs: [
+          "9.0.x → 9.0.2 uses regular in-place upgrade — no temporary IP needed",
+          "Run vCenter pre-check via SDDC Manager",
+          "Verify vCenter VAMI backup is current"
+        ],
+        kbs: ["LCM Core Components"], warning: null
+      },
+      {
+        num: 7, type: "upgrade", title: "Upgrade ESXi to 9.0.2",
+        desc: "Update ESXi image in vCenter Image Library, import to SDDC Manager, assign to clusters, and schedule update.",
+        prereqs: [
+          "Create/update ESXi 9.0.2 image in vCenter Lifecycle Manager Image Library",
+          "Import image into SDDC Manager; assign to clusters",
+          "Run ESXi pre-check — resolve hardware errors before proceeding",
+          "vSAN: OSA → OSA 9.0.2 is direct; OSA → ESA requires separate migration"
+        ],
+        kbs: ["LCM Core Components"],
+        warning: "Do not proceed if pre-check shows hardware compatibility errors — must be resolved first."
+      }
+    ]
+  },
+
+  vcf902_vcf902: {
+    label: "VCF 9.0.2 → Already Current",
+    hops: ["VCF 9.0.2"],
+    complexity: { steps: 0, risk: 0, effort: 0, duration: "N/A" },
+    warning: "You are on the latest release (VCF 9.0.2). Apply future bundles via VCF Operations Fleet Management → Lifecycle as they become available.",
+    steps: []
+  }
+};
+
+
+// KB Reference Database
+const KB_REFS = {
+  "KB 424034": "https://knowledge.broadcom.com/external/article?articleNumber=424034",
+  "KB 424036": "https://knowledge.broadcom.com/external/article?articleNumber=424036",
+  "KB 397327": "https://knowledge.broadcom.com/external/article/397327/scheduling-upgrade-from-vcf-52005201-to.html",
+  "KB 399237": "https://knowledge.broadcom.com/external/article/399237/sddc-manager-90-mandates-re-download-or.html",
+  "KB 390098": "https://knowledge.broadcom.com/external/article/390098",
+  "KB 390121": "https://knowledge.broadcom.com/external/article/390121",
+  "KB 389276": "https://knowledge.broadcom.com/external/article/389276",
+  "KB 308161": "https://knowledge.broadcom.com/external/article/308161",
+  "KB 317899": "https://knowledge.broadcom.com/external/article/317899",
+  "KB 372863": "https://knowledge.broadcom.com/external/article/372863",
+  "KB 382585": "https://knowledge.broadcom.com/external/article/382585/sddc-manager-performs-prechecks-to-valid.html",
+  "KB 418259": "https://knowledge.broadcom.com/external/article/418259",
+  "KB 326926": "https://knowledge.broadcom.com/external/article/326926",
+  "KB 318731": "https://knowledge.broadcom.com/external/article/318731",
+  "KB 316595": "https://knowledge.broadcom.com/external/article/316595",
+  "KB 401497": "https://knowledge.broadcom.com/external/article/401497",
+  "KB 343230": "https://knowledge.broadcom.com/external/article/343230",
+  "KB 313460": "https://knowledge.broadcom.com/external/article/313460",
+  "KB 381824": "https://knowledge.broadcom.com/external/article/381824",
+  "KB 79086": "https://knowledge.broadcom.com/external/article/390634/update-sequence-for-vcf-90-and-compatibl.html",
+  "KB 83829": "https://knowledge.broadcom.com/external/article/390634/update-sequence-for-vcf-90-and-compatibl.html",
+  "KB 85201": "https://knowledge.broadcom.com/external/article/317899/update-sequence-for-vsphere-70-and-its-c.html",
+  "KB 88929": "https://knowledge.broadcom.com/external/article/390634/update-sequence-for-vcf-90-and-compatibl.html",
+  "KB 90795": "https://knowledge.broadcom.com/external/article/382585/sddc-manager-performs-prechecks-to-valid.html",
+  "KB 92018": "https://knowledge.broadcom.com/external/article/390634/update-sequence-for-vcf-90-and-compatibl.html",
+  "LCM Core Components": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/lifecycle-management/lifecycle-management-of-vcf-core-components.html",
+  "LCM Mgmt Components": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/lifecycle-management/using-the-depot-configuration-tab.html",
+  "LCM Overview": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/lifecycle-management/lifecycle-management-in-vmware-cloud-foundation.html",
+  "WLD Upgrade Guide": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/converging-your-existing-vsphere-infrastructure-to-a-vcf-or-vvf-platform-/supported-scenarios-to-converge-to-vcf/converge-your-existing-vcenter-instance-and-esx-hosts.html",
+  "VCF 9.0 Release Notes": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/release-notes/vmware-cloud-foundation-90-release-notes.html",
+  "VCF 9.0.2 Release Notes": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/release-notes/vmware-cloud-foundation-9-0-2-release-notes.html",
+  "BCG Compatibility": "https://compatibilityguide.broadcom.com",
+  "Product Interop Matrix": "https://interopmatrix.broadcom.com",
+  "KB 410550": "https://knowledge.broadcom.com/external/article/410550/troubleshooting-nsx-upgrades-dos-and-don.html",
+  "KB 418243": "https://knowledge.broadcom.com/external/article/418243/cluster-transition-from-baseline-to-imag.html",
+  "KB 430625": "https://knowledge.broadcom.com/external/article/430625/upgrading-to-vcf-90-requires-distributed.html",
+  "KB 402314": "https://knowledge.broadcom.com/external/article/402314/upgrade-guidance-for-aria-operations-for.html",
+  "TechDocs Converge Scenarios": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/converging-your-existing-vsphere-infrastructure-to-a-vcf-or-vvf-platform-/supported-scenarios-to-converge-to-vcf.html",
+  "KB 390634": "https://knowledge.broadcom.com/external/article/390634/update-sequence-for-vcf-90-and-compatibl.html",
+  "Blog: Converge vSphere to VCF 9.0": "https://blogs.vmware.com/cloud-foundation/2026/02/05/how-to-converge-a-vmware-vsphere-environment-to-vmware-cloud-foundation-9-0/",
+  "Blog: VCF 9 Deployment Pathways": "https://blogs.vmware.com/cloud-foundation/2025/07/03/vcf-9-0-deployment-pathways/",
+  "Blog: VCF 9 Paths to Adoption": "https://blogs.vmware.com/cloud-foundation/2026/02/06/global-supports-vmware-cloud-foundation-9-paths-to-adoption/",
+  "Blog: Support Upgrade Playbook": "https://blogs.vmware.com/cloud-foundation/2025/09/15/vmware-cloud-foundation-support-upgrade-playbook/",
+  "Blog: VCF 9 Operations & Management": "https://blogs.vmware.com/cloud-foundation/2026/02/06/why-vcf-9-0-improves-it-operations-and-management/",
+  "Blog: What's New in VCF 9.0": "https://blogs.vmware.com/cloud-foundation/2025/06/17/whats-new-in-vmware-cloud-foundation-9-0/",
+  "Blog: VCF 9.0 Server Certification": "https://blogs.vmware.com/cloud-foundation/2026/02/25/vcf-9-0-server-certification-preserving-your-hardware-investment-and-giving-the-best-roi/",
+  "Blog: VCF 9 Storage Options": "https://blogs.vmware.com/cloud-foundation/2025/11/11/vmware-cloud-foundation-9-now-ready-for-all-storage/",
+  "Blog: Planning VCF 9.0 Deployment": "https://blogs.vmware.com/cloud-foundation/2025/07/28/planning-a-successful-vmware-cloud-foundation-9-0-deployment/",
+};
+
+// Colors for timeline
+const STEP_COLORS = {
+  pre: "#a855f7",
+  backup: "#f59e0b",
+  upgrade: "#3b82f6",
+  aria: "#7c3aed",
+  convert: "#0ea96a",
+  depot: "#d97706",
+  workload: "#4f46e5",
+  validate: "#10b981",
+  finalize: "#059669"
+};
+
+// =============================================
+// STATE
+// =============================================
+let currentEnvType = 'vsphere';
+let currentPath = null;
+
+// =============================================
+// UI FUNCTIONS
+// =============================================
+
+function setEnvType(type, el) {
+  currentEnvType = type;
+  document.querySelectorAll('.path-type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('vsphere-version-group').style.display = type === 'vsphere' ? '' : 'none';
+  document.getElementById('vcf-version-group').style.display = type === 'vcf' ? '' : 'none';
+  const nsxGroup = document.getElementById('nsx-group');
+  const nsxInfo = document.getElementById('nsx-vcf-info');
+  const ariaGroup = document.getElementById('aria-group');
+  if (nsxGroup) nsxGroup.style.display = type === 'vsphere' ? '' : 'none';
+  if (nsxInfo) nsxInfo.style.display = type === 'vcf' ? '' : 'none';
+  if (ariaGroup) ariaGroup.style.display = type === 'vcf' ? '' : 'none';
+  const ariaAutoGroup = document.getElementById('aria-automation-group');
+  if (ariaAutoGroup) ariaAutoGroup.style.display = type === 'vcf' ? '' : 'none';
+  updatePath();
+}
+// shadow the old definition
+
+function updatePath() {
+  // Just a reactive hint — full generation on button click
+}
+
+function getPathKey() {
+  if (currentEnvType === 'vsphere') {
+    const src = document.getElementById('src-vsphere').value;
+    if (!src) return null;
+    return `${src}_vcf90`;
+  } else {
+    const src = document.getElementById('src-vcf').value;
+    if (!src) return null;
+    if (src === 'vcf902') return 'vcf902_vcf902';
+    if (src === 'vcf90') return 'vcf90_vcf902';
+    return `${src}_vcf90`;
+  }
+}
+
+function generatePath() {
+  const key = getPathKey();
+  if (!key || !UPGRADE_PATHS[key]) {
+    document.getElementById('results-panel').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <h3>Please select a source version</h3>
+        <p>Choose your current environment type and version to generate the upgrade path.</p>
+      </div>`;
+    return;
+  }
+
+  const path = UPGRADE_PATHS[key];
+  currentPath = path;
+  const storage = document.getElementById('storage-type').value;
+  const domain = document.getElementById('domain-type').value;
+  const nsx = document.getElementById('nsx-version').value;
+  const subver = document.getElementById('target-subversion').value;
+  const ariaStatus = document.getElementById('aria-status') ? document.getElementById('aria-status').value : 'none';
+  const ariaAutoStatus = document.getElementById('aria-automation-status') ? document.getElementById('aria-automation-status').value : 'not-deployed';
+
+  // Show complexity card
+  renderComplexity(path, domain);
+
+  // Render results
+  const panel = document.getElementById('results-panel');
+  panel.innerHTML = '';
+  panel.classList.add('animate-in');
+
+  // Header
+  const header = document.createElement('div');
+  header.innerHTML = `
+    <div class="results-header">
+      <div>
+        <div class="results-title">${path.label}</div>
+        <div class="results-subtitle">${path.steps.length} steps · Est. ${path.complexity.duration}</div>
+      </div>
+      <div class="results-actions">
+        <button class="btn btn-secondary" onclick="exportReport()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Report
+        </button>
+        <button class="btn btn-secondary" onclick="window.print()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print
+        </button>
+      </div>
+    </div>`;
+  panel.appendChild(header);
+
+  // Summary pills
+  const pillsDiv = document.createElement('div');
+  pillsDiv.className = 'summary-pills';
+  pillsDiv.innerHTML = `
+    <span class="pill pill-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/></svg>${path.hops.length - 1} upgrade hop${path.hops.length - 1 !== 1 ? 's' : ''}</span>
+    <span class="pill pill-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${path.complexity.duration}</span>
+    <span class="pill ${path.complexity.risk > 70 ? 'pill-red' : path.complexity.risk > 40 ? 'pill-amber' : 'pill-green'}">${path.complexity.risk > 70 ? '🔴 High Risk' : path.complexity.risk > 40 ? '🟡 Medium Risk' : '🟢 Low Risk'}</span>
+    <span class="pill pill-purple">${subver === 'vcf902' ? 'Target: VCF 9.0.2' : 'Target: VCF 9.0.x'}</span>
+    ${domain === 'mgmt-wld' ? '<span class="pill pill-purple">Multi-Domain</span>' : ''}
+    ${nsx !== 'none' ? `<span class="pill pill-blue">NSX ${nsx === 'nsx3' ? '3.x' : '4.x'}</span>` : ''}
+    ${ariaStatus === 'aria-old' ? '<span class="pill pill-amber">⚠️ Aria needs multi-hop</span>' : ''}
+    ${ariaStatus === 'aria-818' ? '<span class="pill pill-green">✅ Aria 8.18 ready</span>' : ''}
+    ${ariaStatus === 'none' && currentEnvType === 'vcf' ? '<span class="pill pill-red">⚠️ VCF Ops not installed</span>' : ''}
+    ${ariaAutoStatus === 'not-deployed' && currentEnvType === 'vcf' ? '<span class="pill pill-amber">Automation: not deployed</span>' : ''}
+    ${ariaAutoStatus === 'deployed' && currentEnvType === 'vcf' ? '<span class="pill pill-green">✅ Aria Automation: upgrade needed</span>' : ''}
+    ${ariaAutoStatus === 'vcf-auto-9' && currentEnvType === 'vcf' ? '<span class="pill pill-green">✅ VCF Automation 9.0 current</span>' : ''}
+  `;
+  panel.appendChild(pillsDiv);
+
+  // Warning
+  if (path.warning) {
+    const warnDiv = document.createElement('div');
+    warnDiv.className = 'warn-box';
+    warnDiv.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><p>${path.warning}</p>`;
+    panel.appendChild(warnDiv);
+  }
+
+  // VCF 9.0.0 vs 9.0.1 converge difference notice for vSphere paths
+  if (currentEnvType === 'vsphere' && (subver === 'vcf900' || subver === 'vcf901')) {
+    // vcf900/vcf901 are no longer selectable targets — 9.0.2 is current
+  }
+
+  // Aria Operations status notice for VCF paths
+  if (currentEnvType === 'vcf') {
+    if (ariaStatus === 'none') {
+      const ariaNotice = document.createElement('div');
+      ariaNotice.className = 'warn-box';
+      ariaNotice.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:#d97706;flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><p><strong>VCF Operations not installed:</strong> VCF Operations (fleet manager) is <strong>mandatory</strong> in VCF 9.0. Since you don't have it installed, you must deploy a new VCF Operations 9.0 instance after core component upgrades using the SDDC Manager Developer Center API (<code>POST /v1/vcf-management-components</code>). This is included as a Finalize step in the plan below.</p>`;
+      panel.appendChild(ariaNotice);
+    } else if (ariaStatus === 'aria-old') {
+      const ariaNotice = document.createElement('div');
+      ariaNotice.className = 'warn-box';
+      ariaNotice.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:#d97706;flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><p><strong>Aria Operations multi-hop required:</strong> Aria Operations must reach <strong>version 8.18</strong> before it can be upgraded to VCF Operations 9.0. You will need one or more intermediate upgrades. If using Aria Suite Lifecycle, it must be upgraded to <strong>8.18 patch 2 or later</strong> first. Factor in additional time for these intermediate upgrades.</p>`;
+      panel.appendChild(ariaNotice);
+    }
+  }
+
+  // General info notice
+  const notice = document.createElement('div');
+  notice.className = 'notice';
+  notice.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>This plan is an independent planning reference. Always validate against official <strong>Broadcom documentation</strong> and run <strong>SOS health checks</strong> at every stage. Component-specific versions may require intermediate hops not shown here.</p>`;
+  panel.appendChild(notice);
+
+  // Timeline visualization
+  if (path.steps.length > 0) {
+    renderTimeline(panel, path);
+    renderUpgradePathVisual(panel, path);
+    renderSteps(panel, path, storage, nsx, ariaStatus, ariaAutoStatus);
+  } else {
+    // Already at VCF 9
+    const done = document.createElement('div');
+    done.className = 'empty-state';
+    done.style.border = '2px dashed #0ea96a';
+    done.innerHTML = `<div class="empty-icon">✅</div><h3 style="color:#0ea96a">You're already on VCF 9.0!</h3><p>Focus on keeping up with patch bundles via SDDC Manager LCM. Check the Broadcom portal for the latest VCF 9.0 patch releases.</p>`;
+    panel.appendChild(done);
+  }
+
+  // Disclaimer
+  const disc = document.createElement('div');
+  disc.className = 'disclaimer';
+  disc.innerHTML = `<p><strong>Disclaimer:</strong> This tool is an independent planning aid created by <a href="https://vmtechie.blog" style="color:var(--accent)">vmtechie.blog</a> and is not affiliated with or endorsed by Broadcom Inc. VMware, vSphere, VCF, NSX, and vSAN are trademarks of Broadcom Inc. Always consult official Broadcom documentation and engage Broadcom TAM/support before executing upgrade operations in production environments. KB article links open the official VMware/Broadcom knowledge base.</p>`;
+  panel.appendChild(disc);
+}
+
+function renderTimeline(panel, path) {
+  const totalMinutes = path.steps.reduce((acc, s) => {
+    const durations = { pre: 2, backup: 1, depot: 1, upgrade: 4, aria: 3, convert: 6, workload: 3, validate: 1, finalize: 2 };
+    return acc + (durations[s.type] || 2);
+  }, 0);
+
+  const timelineDiv = document.createElement('div');
+  timelineDiv.className = 'timeline-card';
+  timelineDiv.innerHTML = `
+    <div class="timeline-header">
+      <div class="timeline-title">⏱ Estimated Timeline Breakdown</div>
+      <div class="timeline-total">Total: ${path.complexity.duration}</div>
+    </div>
+    <div class="timeline-bar" id="timeline-bar-${Date.now()}">
+      ${path.steps.map(s => {
+        const durations = { pre: 2, backup: 1, depot: 1, upgrade: 4, aria: 3, convert: 6, workload: 3, validate: 1, finalize: 2 };
+        const pct = ((durations[s.type] || 2) / totalMinutes * 100).toFixed(1);
+        return `<div class="timeline-seg" style="background:${STEP_COLORS[s.type]};width:${pct}%" title="Step ${s.num}: ${s.title}">${s.num}</div>`;
+      }).join('')}
+    </div>
+    <div class="timeline-legend">
+      ${Object.entries(STEP_COLORS).map(([type, color]) => {
+        const labels = { pre: 'Pre-Check', backup: 'Backup', depot: 'Depot', upgrade: 'Upgrade', aria: 'Aria/Ops', convert: 'Convert', workload: 'Workload', validate: 'Validate', finalize: 'Finalize' };
+        const hasType = path.steps.some(s => s.type === type);
+        return hasType ? `<div class="tl-legend-item"><div class="tl-dot" style="background:${color}"></div>${labels[type]}</div>` : '';
+      }).join('')}
+    </div>`;
+  panel.appendChild(timelineDiv);
+}
+
+function renderUpgradePathVisual(panel, path) {
+  const section = document.createElement('div');
+  section.innerHTML = `<div class="section-label">Upgrade Path Overview</div>`;
+
+  const track = document.createElement('div');
+  track.className = 'upgrade-path';
+  const pathDiv = document.createElement('div');
+  pathDiv.className = 'path-track';
+
+  path.hops.forEach((hop, i) => {
+    const node = document.createElement('div');
+    node.className = `path-node ${i === 0 ? 'start' : i === path.hops.length - 1 ? 'final' : 'intermediate'}`;
+    node.innerHTML = `
+      <div class="path-node-circle">${i + 1}</div>
+      <div class="path-node-label">${hop}</div>`;
+    pathDiv.appendChild(node);
+
+    if (i < path.hops.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.className = 'path-arrow';
+      pathDiv.appendChild(arrow);
+    }
+  });
+
+  track.appendChild(pathDiv);
+  section.appendChild(track);
+  panel.appendChild(section);
+}
+
+function renderSteps(panel, path, storage, nsx, ariaStatus, ariaAutoStatus = 'not-deployed') {
+  const section = document.createElement('div');
+  section.innerHTML = `<div class="section-label">Detailed Step-by-Step Plan</div>`;
+
+  const list = document.createElement('div');
+  list.className = 'steps-list';
+
+  path.steps.forEach((step, idx) => {
+    const item = document.createElement('div');
+    item.className = `step-item type-${step.type}`;
+
+    const typeLabels = { pre: 'Pre-Check', backup: 'Backup', depot: 'Depot / Binaries', upgrade: 'Upgrade', aria: 'Aria / Operations', convert: 'Convert', workload: 'Workload Domains', validate: 'Validate', finalize: 'Finalize' };
+
+    // Extra storage note
+    let storageNote = '';
+    if (step.type === 'aria' && ariaStatus === 'aria-818' && step.title.includes('Aria Operations → VCF Operations')) {
+      storageNote = '<div class="notice" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p style="font-size:12px">Aria Operations 8.18 — gate version confirmed. Upgrade to VCF Operations 9.0 via Fleet Management. Note: Ops for Logs requires fresh deployment, not in-place upgrade (KB 402314).</p></div>';
+    }
+    if (step.type === 'aria' && ariaStatus === 'none' && step.title.includes('Aria Operations → VCF Operations')) {
+      storageNote = '<div class="notice" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p style="font-size:12px">VCF Operations not installed — skip this step. Deploy VCF Operations 9.0 post-upgrade via SDDC Manager API (covered in Finalize step).</p></div>';
+    }
+    // Aria Automation step notices
+    if (step.type === 'aria' && step.title.includes('Aria Automation')) {
+      if (ariaAutoStatus === 'not-deployed') {
+        storageNote = '<div class="notice" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p style="font-size:12px"><strong>Aria Automation not deployed</strong> — skip this step.</p></div>';
+      } else if (ariaAutoStatus === 'deployed') {
+        storageNote = '<div class="notice" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p style="font-size:12px"><strong>Aria Automation deployed</strong> — upgrade to VCF Automation 9.0 via Fleet Management after core components are done. Treat as an independent workstream; snapshot appliances before starting.</p></div>';
+      } else if (ariaAutoStatus === 'vcf-auto-9') {
+        storageNote = '<div class="notice" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p style="font-size:12px"><strong>VCF Automation 9.0 already current</strong> — no action needed.</p></div>';
+      }
+    }
+    if (step.type === 'upgrade' && storage === 'vsan' && step.title.toLowerCase().includes('esxi')) {
+      storageNote = '<div class="warn-box" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:#d97706;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><p>vSAN ESA selected: Verify all NVMe drives are on the VCF 9.0 vSAN ESA HCL. ESA does not support all drives that OSA supports.</p></div>';
+    }
+    if (nsx === 'nsx3' && (step.title.toLowerCase().includes('converge') || step.title.toLowerCase().includes('vcf 9') || step.title.toLowerCase().includes('vcf installer') || step.title.toLowerCase().includes('readiness'))) {
+      storageNote += '<div class="warn-box" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:#d97706;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><p>NSX-T 3.x detected: NSX-T 3.x is NOT compatible with VCF 9.0. You must upgrade NSX-T 3.x → NSX 4.1.0.2+ before converging. For VCF 9.0.0, VCF Installer will deploy a new NSX 9.0 instance regardless. For VCF 9.0.1, your upgraded NSX 4.1.0.2+ (without ELM) can be converged directly.</p></div>';
+    }
+
+    item.innerHTML = `
+      <div class="step-line"></div>
+      <div class="step-left">
+        <div class="step-num">${step.num}</div>
+      </div>
+      <div class="step-content">
+        <div class="step-header">
+          <div class="step-title">${step.title}</div>
+          <div class="step-type-badge">${typeLabels[step.type]}</div>
+        </div>
+        <div class="step-desc">${step.desc}</div>
+        ${step.warning ? `<div class="warn-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:#d97706;flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><p>${step.warning}</p></div>` : ''}
+        ${storageNote}
+        <div class="prereq-box">
+          <h4>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Prerequisites / Checklist
+          </h4>
+          <ul class="prereq-list">
+            ${step.prereqs.map(p => `<li>${p}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="kb-links">
+          ${step.kbs.map(kb => `<a class="kb-link" href="${KB_REFS[kb] || '#'}" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            ${kb}
+          </a>`).join('')}
+        </div>
+      </div>`;
+    list.appendChild(item);
+  });
+
+  section.appendChild(list);
+  panel.appendChild(section);
+}
+
+function renderComplexity(path, domain) {
+  const card = document.getElementById('complexity-card');
+  const body = document.getElementById('complexity-body');
+  card.style.display = '';
+
+  const multiplier = domain === 'mgmt-wld' ? 1.3 : 1;
+  const steps = Math.min(Math.round(path.complexity.steps * multiplier), 100);
+  const risk = Math.min(Math.round(path.complexity.risk * multiplier), 100);
+  const effort = Math.min(Math.round(path.complexity.effort * multiplier), 100);
+
+  const getColor = (v) => v > 70 ? '#e53e3e' : v > 40 ? '#f59e0b' : '#0ea96a';
+  const getLabel = (v) => v > 70 ? 'High' : v > 40 ? 'Medium' : 'Low';
+
+  body.innerHTML = `
+    <div class="complexity-row">
+      <div class="complexity-label">Steps</div>
+      <div class="complexity-track"><div class="complexity-fill" style="width:${steps}%;background:${getColor(steps)}"></div></div>
+      <div class="complexity-val" style="color:${getColor(steps)}">${getLabel(steps)}</div>
+    </div>
+    <div class="complexity-row">
+      <div class="complexity-label">Risk</div>
+      <div class="complexity-track"><div class="complexity-fill" style="width:${risk}%;background:${getColor(risk)}"></div></div>
+      <div class="complexity-val" style="color:${getColor(risk)}">${getLabel(risk)}</div>
+    </div>
+    <div class="complexity-row">
+      <div class="complexity-label">Effort</div>
+      <div class="complexity-track"><div class="complexity-fill" style="width:${effort}%;background:${getColor(effort)}"></div></div>
+      <div class="complexity-val" style="color:${getColor(effort)}">${getLabel(effort)}</div>
+    </div>
+    <div style="font-size:12px;color:var(--text-3);margin-top:4px;padding-top:12px;border-top:1px solid var(--border)">
+      ${path.steps.length} steps · ${path.hops.length - 1} version hop${path.hops.length - 1 !== 1 ? 's' : ''} · ${path.complexity.duration}
+    </div>`;
+}
+
+// =============================================
+// EXPORT REPORT
+// =============================================
+function exportReport() {
+  if (!currentPath) return;
+
+  const storage = document.getElementById('storage-type');
+  const domain = document.getElementById('domain-type');
+  const nsx = document.getElementById('nsx-version');
+
+  const now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>VCF Upgrade Report - ${currentPath.label}</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:900px;margin:40px auto;color:#111;font-size:13px;line-height:1.6}
+h1{font-size:22px;border-bottom:3px solid #1a6ef5;padding-bottom:10px;color:#0f1923}
+h2{font-size:16px;margin-top:28px;color:#1a6ef5}
+h3{font-size:14px;margin-top:16px;color:#333}
+.meta{background:#f0f2f5;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:12px}
+.meta div{margin:3px 0}
+.step{border:1px solid #e2e6ec;border-radius:6px;padding:16px;margin:12px 0;page-break-inside:avoid}
+.step-num{display:inline-block;background:#1a6ef5;color:white;width:22px;height:22px;border-radius:50%;text-align:center;font-weight:700;font-size:11px;line-height:22px;margin-right:8px}
+.warn{background:#fef3cd;border:1px solid #fcd34d;padding:10px 12px;border-radius:4px;margin:8px 0;font-size:12px}
+.prereqs{background:#f7f8fa;padding:10px 14px;border-radius:4px;margin:8px 0}
+.prereqs li{margin:3px 0;font-size:12px}
+.kbs{margin-top:8px;font-size:11px;color:#666}
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;margin-left:8px;text-transform:uppercase}
+.badge-upgrade{background:#e8f0fe;color:#1a6ef5}
+.badge-backup{background:#fef3cd;color:#92400e}
+.badge-validate{background:#e6f9f2;color:#065f46}
+.badge-convert{background:#e6f9f2;color:#065f46}
+.badge-aria{background:#ede9fe;color:#5b21b6}
+.badge-finalize{background:#d1fae5;color:#065f46}
+.badge-pre{background:#fce7f3;color:#9d174d}
+.badge-depot{background:#fef3c7;color:#92400e}
+.badge-workload{background:#e0e7ff;color:#3730a3}
+.footer{margin-top:32px;padding-top:12px;border-top:1px solid #e2e6ec;font-size:11px;color:#aaa}
+</style></head><body>
+<h1>VCF Upgrade Path Report</h1>
+<h2 style="font-size:20px;color:#0f1923;margin-top:8px">${currentPath.label}</h2>
+<div class="meta">
+  <div><strong>Generated:</strong> ${now} by vmtechie.blog VCF Upgrade Planner</div>
+  <div><strong>Storage Backend:</strong> ${storage.options[storage.selectedIndex].text}</div>
+  <div><strong>Domain Scope:</strong> ${domain.options[domain.selectedIndex].text}</div>
+  <div><strong>NSX Version:</strong> ${nsx.options[nsx.selectedIndex].text}</div>
+  <div><strong>Estimated Duration:</strong> ${currentPath.complexity.duration}</div>
+  <div><strong>Upgrade Path:</strong> ${currentPath.hops.join(' → ')}</div>
+</div>`;
+
+  if (currentPath.warning) {
+    html += `<div class="warn">⚠️ <strong>Important:</strong> ${currentPath.warning}</div>`;
+  }
+
+  html += `<h2>Upgrade Steps</h2>`;
+
+  const typeLabels = { pre: 'Pre-Check', backup: 'Backup', depot: 'Depot / Binaries', upgrade: 'Upgrade', aria: 'Aria / Operations', convert: 'Convert', workload: 'Workload Domains', validate: 'Validate', finalize: 'Finalize' };
+
+  currentPath.steps.forEach(step => {
+    html += `<div class="step">
+      <h3><span class="step-num">${step.num}</span>${step.title}<span class="badge badge-${step.type}">${typeLabels[step.type]}</span></h3>
+      <p>${step.desc}</p>
+      ${step.warning ? `<div class="warn">⚠️ ${step.warning}</div>` : ''}
+      <div class="prereqs">
+        <strong>Prerequisites / Checklist:</strong>
+        <ul>${step.prereqs.map(p => `<li>${p}</li>`).join('')}</ul>
+      </div>
+      <div class="kbs"><strong>KB References:</strong> ${step.kbs.join(', ')}</div>
+    </div>`;
+  });
+
+  html += `<div class="footer">
+    <strong>Disclaimer:</strong> This report is an independent planning reference generated by vmtechie.blog and is not affiliated with or endorsed by Broadcom Inc. VMware, vSphere, VCF, NSX, and vSAN are trademarks of Broadcom Inc. Always consult official Broadcom documentation before executing upgrade operations.
+  </div></body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `VCF-Upgrade-Path-${currentPath.label.replace(/[^a-z0-9]/gi, '-')}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
